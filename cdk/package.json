@@ -1,0 +1,22 @@
+{
+  "name": "SoME CDK",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "aws-cdk": "^2.51.1",
+    "esbuild": "~0.15.14",
+    "prettier": "^2.7.1",
+    "typescript": "~4.8.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.51.1",
+    "constructs": "^10.0.0",
+    "dotenv": "^16.0.3"
+  }
+}
