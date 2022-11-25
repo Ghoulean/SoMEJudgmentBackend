@@ -1,0 +1,212 @@
+{
+    "put": {
+        "operationId": "createCase",
+        "parameters": [
+            {
+                "name": "userId",
+                "in": "cookie",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            }
+        ],
+        "responses": {
+            "200": {
+                "description": "Returned when a new case has been successfully created.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "schema/case.json"
+                            }
+                        }
+                    }
+                ]
+            },
+            "400": {
+                "description": "Returned when client calls this endpoint in an unpermitted state.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#BadRequest"
+                            }
+                        }
+                    }
+                ]
+            },
+            "403": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            },
+            "default": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "post": {
+        "operationId": "submitCase",
+        "parameters": [
+            {
+                "name": "userId",
+                "in": "cookie",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "winnerId",
+                "in": "query",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "loserId",
+                "in": "query",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "winnerFeedback",
+                "in": "query",
+                "schema": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "loserFeedback",
+                "in": "query",
+                "schema": {
+                    "type": "string"
+                }
+            }
+        ],
+        "responses": {
+            "200": {
+                "description": "Returned when a judgement has been successfully submitted."
+            },
+            "400": {
+                "description": "Returned when client calls this endpoint with bad parameters.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#BadRequest"
+                            }
+                        }
+                    }
+                ]
+            },
+            "403": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            },
+            "default": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "get": {
+        "operationId": "getCase",
+        "parameters": [
+            {
+                "name": "userId",
+                "in": "cookie",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            }
+        ],
+        "responses": {           
+            "200": {
+                "description": "Returns the current active case.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "schema/case.json"
+                            }
+                        }
+                    }
+                ]
+            },
+            "400": {
+                "description": "Returned when client calls this endpoint in an unpermitted state.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#BadRequest"
+                            }
+                        }
+                    }
+                ]
+            },
+            "403": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            },
+            "default": {
+                "description": "Returned when client is unauthorized.",
+                "content": [
+                    {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "errors.json#Unauthorized"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "judge": {
+        "type": "object",
+        "required": ["userId"],
+        "properties": {
+            "userId": {
+                "type": "string"
+            }
+        }
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "case": {
+        "type": "object",
+        "required": ["judge", "submissionId1", "submissionId2", "createdAt"],
+        "properties": {
+            "judge": {
+                "$ref": "judge.json"
+            },
+            "submissionId1": {
+                "$ref": "submission.json"
+            },
+            "submissionId2": {
+                "$ref": "submission.json"
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time"
+            }
+        }
+    }
+}

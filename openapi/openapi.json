@@ -1,0 +1,25 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "SoMEJudgment",
+        "description": "API specification for interacting with the SoME peer review backend system.",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/case": {
+            "$ref": "casepath.json"
+        }
+    },
+    "security": {
+        "bearerAuth": []
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}

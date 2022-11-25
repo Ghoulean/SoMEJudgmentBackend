@@ -1,0 +1,20 @@
+{
+    "submission": {
+        "type": "object",
+        "required": ["submissionId", "submissionLink", "submissionAuthors"],
+        "properties": {
+            "submissionId": { 
+                "type": "string"
+            },
+            "submissionLink": { 
+                "type": "string"
+            },
+            "submissionAuthors": { 
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
