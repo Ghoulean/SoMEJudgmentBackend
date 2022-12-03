@@ -17,10 +17,10 @@ public final class EnvironmentModule {
         return Region.of(getEnv("AWS_REGION"));
     }
 
-    @Named("tableName")
+    @Named(Constants.TABLE_NAME)
     @Provides
     public static String provideTableName() {
-        return getEnv("TABLE_NAME");
+        return getEnv(Constants.TABLE_NAME);
     }
 
     private static String getEnv(@NonNull final String key) {

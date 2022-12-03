@@ -2,18 +2,13 @@ package com.ghoulean.garbageoncall.model.pojo;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbImmutable;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import lombok.experimental.FieldNameConstants;
 
 @Builder
 @Data
-@DynamoDbImmutable(builder = Judgment.Builder.class)
+@FieldNameConstants
 public final class Judgment {
-    @Getter(onMethod_ = @DynamoDbPartitionKey)
-    final String judge;
+    final String judgeId;
     final String winnerId;
     final String loserId;
-    final String winnerFeedback;
-    final String loserFeedback;
 }

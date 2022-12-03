@@ -39,7 +39,6 @@ public final class CreateCaseLambda implements RequestStreamHandler {
             for (int result = bis.read(); result != -1; result = bis.read()) {
                 buf.write((byte) result);
             }
-            // StandardCharsets.UTF_8.name() > JDK 7
             return buf.toString(StandardCharsets.UTF_8.name());
         } catch (IOException e) {
             throw new RuntimeException(e);

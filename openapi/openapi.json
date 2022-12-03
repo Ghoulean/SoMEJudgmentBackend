@@ -1,13 +1,20 @@
 {
-    "openapi": "3.1.0",
+    "openapi": "3.0.0",
     "info": {
         "title": "SoMEJudgment",
         "description": "API specification for interacting with the SoME peer review backend system.",
         "version": "0.1.0"
     },
+    "x-amazon-apigateway-request-validators": {
+        "params-only": {
+            "validateRequestBody": false,
+            "validateRequestParameters": true
+        }
+    },
+    "x-amazon-apigateway-request-validator": "params-only",
     "paths": {
         "/case": {
-            "$ref": "casepath.json"
+            "$ref": "./casepath.json"
         }
     },
     "security": {

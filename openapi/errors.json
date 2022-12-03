@@ -1,3 +1,26 @@
 {
-
+    "BadRequest": {
+        "type": "object",
+        "properties": {
+            "code": {
+                "type": "integer",
+                "format": "int32"
+            },
+            "message": {
+                "type": "string"
+            }
+        }
+    },
+    "Unauthorized": {
+        "type": "object",
+        "properties": {
+            "code": {
+                "type": "integer",
+                "format": "int32"
+            },
+            "message": {
+                "type": "string"
+            }
+        }
+    }
 }
