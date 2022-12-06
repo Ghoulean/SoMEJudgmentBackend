@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -21,6 +22,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 @Slf4j
 @Singleton
@@ -107,24 +112,152 @@ public final class DynamoDbAccessor {
         }
     }
 
-    public boolean insertJudgment(@NonNull final Judgment judgment) {
-        return false;
+    public void insertJudgment(@NonNull final Judgment judgment) {
+        log.info("DynamoDbAccessor::insertJudgment invoked with judgment={}", judgment);
+        final HashMap<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(createUserIdPartitionKey(judgment.getJudgeId())).build());
+        itemValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentSortKey()).build());
+        itemValues.put(Judgment.Fields.winnerId, AttributeValue.builder().s(judgment.getWinnerId()).build());
+        itemValues.put(Judgment.Fields.loserId, AttributeValue.builder().s(judgment.getLoserId()).build());
+
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(tableName)
+                .item(itemValues)
+                .build();
+        try {
+            PutItemResponse response = dynamoDB.putItem(request);
+            log.info("DynamoDbAccessor::insertJudgment successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public boolean upsertActiveCase(@NonNull final ActiveCase activeCase) {
-        return false;
+    public void upsertActiveCase(@NonNull final ActiveCase activeCase) {
+        log.info("DynamoDbAccessor::upsertActiveCase invoked with activeCase={}", activeCase);
+        final HashMap<String, AttributeValue> keyValues = new HashMap<>();
+        final HashMap<String, AttributeValue> itemValues = new HashMap<>();
+        keyValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(createUserIdPartitionKey(activeCase.getJudgeId())).build());
+        keyValues.put(SORT_KEY, AttributeValue.builder().s(ACTIVE_CASE_SORT_KEY).build());
+        itemValues.put(ActiveCase.Fields.submission1, AttributeValue.builder().s(activeCase.getSubmission1()).build());
+        itemValues.put(ActiveCase.Fields.submission2, AttributeValue.builder().s(activeCase.getSubmission2()).build());
+        itemValues.put(ActiveCase.Fields.createdAt,
+                AttributeValue.builder().s(convertInstantToEpochSecond(activeCase.getCreatedAt())).build());
+
+        UpdateItemRequest request = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(keyValues)
+                .updateExpression(generateUpdateExpression(itemValues))
+                .expressionAttributeValues(generateExpressionAttributeValues(itemValues))
+                .build();
+        try {
+            UpdateItemResponse response = dynamoDB.updateItem(request);
+            log.info("DynamoDbAccessor::upsertActiveCase successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public boolean upsertFeedback(@NonNull final Feedback feedback) {
-        return false;
+    public void upsertFeedback(@NonNull final Feedback feedback) {
+        log.info("DynamoDbAccessor::upsertFeedback invoked with feedback={}", feedback);
+        final HashMap<String, AttributeValue> keyValues = new HashMap<>();
+        final HashMap<String, AttributeValue> itemValues = new HashMap<>();
+        keyValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(createUserIdPartitionKey(feedback.getJudgeId())).build());
+        keyValues.put(SORT_KEY, AttributeValue.builder().s(createFeedbackSortKey(feedback.getSubmissionId())).build());
+        itemValues.put(Feedback.Fields.feedback, AttributeValue.builder().s(feedback.getFeedback()).build());
+
+        UpdateItemRequest request = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(keyValues)
+                .updateExpression(generateUpdateExpression(itemValues))
+                .expressionAttributeValues(generateExpressionAttributeValues(itemValues))
+                .build();
+        try {
+            UpdateItemResponse response = dynamoDB.updateItem(request);
+            log.info("DynamoDbAccessor::upsertFeedback successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void incrementTableSize() {
+        log.info("DynamoDbAccessor::incrementTableSize");
+        final HashMap<String, AttributeValue> keyValues = new HashMap<>();
+        keyValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(JUDGMENT_COUNT_PARTITION_KEY).build());
+        keyValues.put(SORT_KEY, AttributeValue.builder().s(JUDGMENT_COUNT_SORT_KEY).build());
+
+        final String updateExpression = String.format("SET %s = %s + :c", TableSize.Fields.amount,
+                TableSize.Fields.amount);
+
+        final HashMap<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":c", AttributeValue.fromN("1"));
+
+        UpdateItemRequest request = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(keyValues)
+                .updateExpression(updateExpression)
+                .expressionAttributeValues(expressionAttributeValues)
+                .build();
+        try {
+            UpdateItemResponse response = dynamoDB.updateItem(request);
+            log.info("DynamoDbAccessor::incrementTableSize successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String createUserIdPartitionKey(@NonNull final String userId) {
         return "USER#" + userId;
     }
 
+    private String createJudgmentSortKey() {
+        return "JUDGMENT#" + UUID.randomUUID();
+    }
+
+    private String createFeedbackSortKey(@NonNull final String submissionId) {
+        return "FEEDBACK#" + submissionId;
+    }
+
     private Instant convertEpochSecondToInstant(final String epochSecond) {
         return Instant.ofEpochSecond(Long.valueOf(epochSecond));
     }
 
+    private String convertInstantToEpochSecond(final Instant instant) {
+        return String.valueOf(instant.getEpochSecond());
+    }
+
+    private String generateUpdateExpression(final Map<String, AttributeValue> itemValues) {
+        final StringBuilder expressionBuilder = new StringBuilder("SET ");
+        for (final String key : itemValues.keySet()) {
+            expressionBuilder.append(key + " = :" + key + ",");
+        }
+        expressionBuilder.deleteCharAt(expressionBuilder.length() - 1);
+        return expressionBuilder.toString();
+    }
+
+    private Map<String, AttributeValue> generateExpressionAttributeValues(
+            final Map<String, AttributeValue> itemValues) {
+        final HashMap<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        for (final Map.Entry<String, AttributeValue> entry : itemValues.entrySet()) {
+            final String key = entry.getKey();
+            final AttributeValue value = entry.getValue();
+            expressionAttributeValues.put(":" + key, value);
+        }
+        return expressionAttributeValues;
+    }
 }
