@@ -1,4 +1,4 @@
-package com.ghoulean.garbageoncall.model.pojo;
+package com.ghoulean.somejudgment.model.pojo;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @FieldNameConstants
 public final class Feedback {
-    final String judgeId;
-    final String submissionId;
-    final String feedback;
+    private final String judgeId;
+    private final String submissionId;
+    private final String feedback;
 }

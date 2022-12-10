@@ -1,4 +1,4 @@
-package com.ghoulean.garbageoncall.dagger;
+package com.ghoulean.somejudgment.dagger;
 
 import javax.inject.Named;
 

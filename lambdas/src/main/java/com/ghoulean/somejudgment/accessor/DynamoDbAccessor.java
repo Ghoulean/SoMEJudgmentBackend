@@ -1,4 +1,4 @@
-package com.ghoulean.garbageoncall.accessor;
+package com.ghoulean.somejudgment.accessor;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -10,11 +10,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import com.ghoulean.garbageoncall.dagger.Constants;
-import com.ghoulean.garbageoncall.model.pojo.ActiveCase;
-import com.ghoulean.garbageoncall.model.pojo.Feedback;
-import com.ghoulean.garbageoncall.model.pojo.Judgment;
-import com.ghoulean.garbageoncall.model.pojo.TableSize;
+import com.ghoulean.somejudgment.dagger.Constants;
+import com.ghoulean.somejudgment.model.pojo.ActiveCase;
+import com.ghoulean.somejudgment.model.pojo.Feedback;
+import com.ghoulean.somejudgment.model.pojo.Judgment;
+import com.ghoulean.somejudgment.model.pojo.TableSize;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public final class DynamoDbAccessor {
     private static final String JUDGMENT_COUNT_PARTITION_KEY = "COUNT#JUDGMENTS";
     private static final String JUDGMENT_COUNT_SORT_KEY = "NOT_USED";
 
-    private static final int JUDGMENT_MAX_PAGE_SIZE = 10;
+    // private static final int JUDGMENT_MAX_PAGE_SIZE = 10;
     private @NonNull final DynamoDbClient dynamoDB;
     private @NonNull final String tableName;
 

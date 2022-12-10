@@ -1,4 +1,4 @@
-package com.ghoulean.garbageoncall.model.pojo;
+package com.ghoulean.somejudgment.model.pojo;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,5 +8,5 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @FieldNameConstants
 public final class TableSize {
-    final int amount;
+    private final int amount;
 }

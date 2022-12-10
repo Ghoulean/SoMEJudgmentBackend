@@ -1,4 +1,6 @@
-package com.ghoulean.garbageoncall.dagger;
+package com.ghoulean.somejudgment.dagger;
+
+import com.google.gson.Gson;
 
 import dagger.Module;
 import dagger.Provides;
@@ -14,5 +16,10 @@ public final class ClientModule {
             .region(region)
             .build();
        return ddb;
+    }
+
+    @Provides
+    public Gson provideGson() {
+        return new Gson();
     }
 }
