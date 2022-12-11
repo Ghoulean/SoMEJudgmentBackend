@@ -2,8 +2,10 @@ package com.ghoulean.somejudgment.model.response;
 
 import com.ghoulean.somejudgment.model.pojo.Submission;
 
+import lombok.Builder;
 import lombok.Data;
 
+@Builder
 @Data
 public final class GetCaseResponse {
     private final Submission submission1;

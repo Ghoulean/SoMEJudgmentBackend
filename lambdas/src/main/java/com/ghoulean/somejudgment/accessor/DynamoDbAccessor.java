@@ -11,10 +11,13 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import com.ghoulean.somejudgment.dagger.Constants;
+import com.ghoulean.somejudgment.model.enums.SubmissionType;
 import com.ghoulean.somejudgment.model.pojo.ActiveCase;
 import com.ghoulean.somejudgment.model.pojo.Feedback;
 import com.ghoulean.somejudgment.model.pojo.Judgment;
-import com.ghoulean.somejudgment.model.pojo.TableSize;
+import com.ghoulean.somejudgment.model.pojo.JudgmentCount;
+import com.ghoulean.somejudgment.model.pojo.NewActiveCaseOptions;
+import com.google.gson.Gson;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -34,17 +37,19 @@ public final class DynamoDbAccessor {
     private static final String SORT_KEY = "SK";
     private static final String ACTIVE_CASE_SORT_KEY = "CASE#ACTIVE";
     private static final String JUDGMENT_COUNT_PARTITION_KEY = "COUNT#JUDGMENTS";
-    private static final String JUDGMENT_COUNT_SORT_KEY = "NOT_USED";
 
     // private static final int JUDGMENT_MAX_PAGE_SIZE = 10;
     private @NonNull final DynamoDbClient dynamoDB;
     private @NonNull final String tableName;
+    private @NonNull final Gson gson;
 
     @Inject
     public DynamoDbAccessor(@NonNull final DynamoDbClient dynamoDB,
-            @Named(Constants.TABLE_NAME) final String tableName) {
+            @Named(Constants.TABLE_NAME) final String tableName,
+            @NonNull final Gson gson) {
         this.dynamoDB = dynamoDB;
         this.tableName = tableName;
+        this.gson = gson;
     }
 
     public ActiveCase getActiveCase(@NonNull final String judgeId) {
@@ -66,11 +71,14 @@ public final class DynamoDbAccessor {
                         .submission1(item.get(ActiveCase.Fields.submission1).s())
                         .submission2(item.get(ActiveCase.Fields.submission2).s())
                         .createdAt(convertEpochSecondToInstant(item.get(ActiveCase.Fields.createdAt).n()))
+                        .createdOptions(gson.fromJson(item.get(ActiveCase.Fields.createdOptions).s(),
+                                NewActiveCaseOptions.class))
                         .build();
                 log.info("DynamoDbAccessor::getActiveCase: Received activeCase={} for judgeId={}", activeCase, judgeId);
                 return activeCase;
             } else {
-                throw new RuntimeException("Could not find ActiveCase ddb entry for " + judgeId);
+                log.info("Could not find ActiveCase ddb entry for {}", judgeId);
+                return null;
             }
         } catch (DynamoDbException e) {
             throw new RuntimeException(e);
@@ -83,13 +91,13 @@ public final class DynamoDbAccessor {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    public TableSize getTotalNumberOfJudgments() {
-        log.info("DynamoDbAccessor::getTotalNumberOfJudgments");
+    public JudgmentCount getJudgmentCount(@NonNull final SubmissionType submissionType) {
+        log.info("DynamoDbAccessor::getJudgmentCount with submissionType={}", submissionType);
         final HashMap<String, AttributeValue> keyToGet = new HashMap<String, AttributeValue>();
         keyToGet.put(PARTITION_KEY, AttributeValue.builder()
                 .s(JUDGMENT_COUNT_PARTITION_KEY).build());
         keyToGet.put(SORT_KEY, AttributeValue.builder()
-                .s(JUDGMENT_COUNT_SORT_KEY).build());
+                .s(createJudgmentCountSortKey(submissionType)).build());
         final GetItemRequest request = GetItemRequest.builder()
                 .key(keyToGet)
                 .tableName(tableName)
@@ -97,13 +105,13 @@ public final class DynamoDbAccessor {
         try {
             final Map<String, AttributeValue> item = dynamoDB.getItem(request).item();
             if (item != null) {
-                TableSize tableSize = TableSize.builder()
-                        .amount(Integer.valueOf(item.get(TableSize.Fields.amount).n()))
+                JudgmentCount judgmentCount = JudgmentCount.builder()
+                        .amount(Integer.valueOf(item.get(JudgmentCount.Fields.amount).n()))
                         .build();
-                log.info("DynamoDbAccessor::getTotalNumberOfJudgments: Received tableSize={}", tableSize);
-                return tableSize;
+                log.info("DynamoDbAccessor::getJudgmentCount: Received tableSize={}", judgmentCount);
+                return judgmentCount;
             } else {
-                throw new RuntimeException("Could not find TableSize ddb entry");
+                throw new RuntimeException("Could not find JudgmentCount ddb entry");
             }
         } catch (DynamoDbException e) {
             throw new RuntimeException(e);
@@ -147,6 +155,8 @@ public final class DynamoDbAccessor {
         itemValues.put(ActiveCase.Fields.submission2, AttributeValue.builder().s(activeCase.getSubmission2()).build());
         itemValues.put(ActiveCase.Fields.createdAt,
                 AttributeValue.builder().s(convertInstantToEpochSecond(activeCase.getCreatedAt())).build());
+        itemValues.put(ActiveCase.Fields.createdOptions,
+                AttributeValue.builder().s(gson.toJson(activeCase.getCreatedOptions())).build());
 
         UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName(tableName)
@@ -191,15 +201,15 @@ public final class DynamoDbAccessor {
         }
     }
 
-    public void incrementTableSize() {
-        log.info("DynamoDbAccessor::incrementTableSize");
+    public void incrementJudgmentCount(@NonNull final SubmissionType submissionType) {
+        log.info("DynamoDbAccessor::incrementJudgmentCount with submissionType={}", submissionType);
         final HashMap<String, AttributeValue> keyValues = new HashMap<>();
         keyValues.put(PARTITION_KEY,
                 AttributeValue.builder().s(JUDGMENT_COUNT_PARTITION_KEY).build());
-        keyValues.put(SORT_KEY, AttributeValue.builder().s(JUDGMENT_COUNT_SORT_KEY).build());
+        keyValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentCountSortKey(submissionType)).build());
 
-        final String updateExpression = String.format("SET %s = %s + :c", TableSize.Fields.amount,
-                TableSize.Fields.amount);
+        final String updateExpression = String.format("SET %s = %s + :c", JudgmentCount.Fields.amount,
+                JudgmentCount.Fields.amount);
 
         final HashMap<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":c", AttributeValue.fromN("1"));
@@ -231,6 +241,10 @@ public final class DynamoDbAccessor {
 
     private String createFeedbackSortKey(@NonNull final String submissionId) {
         return "FEEDBACK#" + submissionId;
+    }
+
+    private String createJudgmentCountSortKey(@NonNull final SubmissionType submissionType) {
+        return "SUBMISSION#" + submissionType.name();
     }
 
     private Instant convertEpochSecondToInstant(final String epochSecond) {

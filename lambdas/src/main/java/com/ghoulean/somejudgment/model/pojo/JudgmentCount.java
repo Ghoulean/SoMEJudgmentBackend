@@ -7,6 +7,6 @@ import lombok.experimental.FieldNameConstants;
 @Builder
 @Data
 @FieldNameConstants
-public final class TableSize {
+public final class JudgmentCount {
     private final int amount;
 }

@@ -14,4 +14,5 @@ public final class ActiveCase {
     private final String submission1;
     private final String submission2;
     private final Instant createdAt;
+    private final NewActiveCaseOptions createdOptions;
 }

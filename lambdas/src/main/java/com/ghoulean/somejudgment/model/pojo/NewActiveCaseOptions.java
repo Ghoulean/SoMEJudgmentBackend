@@ -7,9 +7,6 @@ import lombok.experimental.FieldNameConstants;
 @Builder
 @Data
 @FieldNameConstants
-public final class Submission {
-    private final String id;
-    private final String submissionLink;
-    private final String submitters;
-    private final String emails;
+public final class NewActiveCaseOptions {
+    private final boolean nonVideoSubmission;
 }

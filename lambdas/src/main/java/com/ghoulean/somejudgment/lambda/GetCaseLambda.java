@@ -40,7 +40,9 @@ public final class GetCaseLambda implements RequestStreamHandler {
             @NonNull final Context context) {
         final String inputString = convertStreamToString(inputStream);
         final GetCaseRequest getCaseRequest = gson.fromJson(inputString, GetCaseRequest.class);
+        log.info("Received: {}, serialized into: {}", inputString, getCaseRequest);
         final GetCaseResponse getCaseResponse = getCaseHandler.handle(getCaseRequest);
+        log.info("Returning: {}", getCaseResponse);
         writeStringToStream(outputStream, gson.toJson(getCaseResponse));
     }
 
