@@ -27,6 +27,8 @@ dependencies {
     annotationProcessor 'com.google.dagger:dagger-compiler:2.44'
     // gson
     implementation 'com.google.code.gson:gson:2.9.1'
+    // Javax WS RS
+    implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     // JUnit
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'

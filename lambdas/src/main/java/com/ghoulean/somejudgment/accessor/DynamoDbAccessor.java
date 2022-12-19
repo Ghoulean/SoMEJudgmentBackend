@@ -23,6 +23,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
@@ -223,6 +225,29 @@ public final class DynamoDbAccessor {
         try {
             UpdateItemResponse response = dynamoDB.updateItem(request);
             log.info("DynamoDbAccessor::incrementTableSize successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteActiveCase(@NonNull final String judgeId) {
+        log.info("DynamoDbAccessor::deleteActiveCase with judgeId={}", judgeId);
+        HashMap<String, AttributeValue> keyValues = new HashMap<>();
+        keyValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(createUserIdPartitionKey(judgeId)).build());
+        keyValues.put(SORT_KEY, AttributeValue.builder().s(ACTIVE_CASE_SORT_KEY).build());
+
+        DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
+                .tableName(tableName)
+                .key(keyValues)
+                .build();
+
+        try {
+            DeleteItemResponse response = dynamoDB.deleteItem(deleteRequest);
+            log.info("DynamoDbAccessor::deleteActiveCase successful with requestId={}",
                     response.responseMetadata().requestId());
         } catch (DynamoDbException e) {
             throw new RuntimeException(e);
