@@ -5,5 +5,5 @@ import lombok.Data;
 
 @Builder
 @Data
-public final class SubmitCaseResponse {
+public final class SubmitJudgmentResponse {
 }

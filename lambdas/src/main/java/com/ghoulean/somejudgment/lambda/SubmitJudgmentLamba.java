@@ -11,27 +11,27 @@ import java.nio.charset.StandardCharsets;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.ghoulean.somejudgment.dagger.component.DaggerGetCaseComponent;
-import com.ghoulean.somejudgment.dagger.component.GetCaseComponent;
-import com.ghoulean.somejudgment.handler.GetCaseHandler;
-import com.ghoulean.somejudgment.model.request.GetCaseRequest;
-import com.ghoulean.somejudgment.model.response.GetCaseResponse;
+import com.ghoulean.somejudgment.dagger.component.DaggerSubmitJudgmentComponent;
+import com.ghoulean.somejudgment.dagger.component.SubmitJudgmentComponent;
+import com.ghoulean.somejudgment.handler.SubmitJudgmentHandler;
+import com.ghoulean.somejudgment.model.request.SubmitJudgmentRequest;
+import com.ghoulean.somejudgment.model.response.SubmitJudgmentResponse;
 import com.google.gson.Gson;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class GetCaseLambda implements RequestStreamHandler {
+public final class SubmitJudgmentLamba implements RequestStreamHandler {
     @NonNull
-    private final GetCaseHandler getCaseHandler;
+    private final SubmitJudgmentHandler submitJudgmentHandler;
     @NonNull
     private final Gson gson;
 
-    public GetCaseLambda() {
-        GetCaseComponent getCaseComponent = DaggerGetCaseComponent.create();
-        getCaseHandler = getCaseComponent.getGetCaseHandler();
-        gson = getCaseComponent.getGson();
+    public SubmitJudgmentLamba() {
+        SubmitJudgmentComponent submitJudgmentComponent = DaggerSubmitJudgmentComponent.create();
+        submitJudgmentHandler = submitJudgmentComponent.getSubmitJudgmentHandler();
+        gson = submitJudgmentComponent.getGson();
     }
 
     @Override
@@ -39,11 +39,11 @@ public final class GetCaseLambda implements RequestStreamHandler {
             @NonNull final OutputStream outputStream,
             @NonNull final Context context) {
         final String inputString = convertStreamToString(inputStream);
-        final GetCaseRequest getCaseRequest = gson.fromJson(inputString, GetCaseRequest.class);
-        log.info("Received: {}, serialized into: {}", inputString, getCaseRequest);
-        final GetCaseResponse getCaseResponse = getCaseHandler.handle(getCaseRequest);
-        log.info("Returning: {}", getCaseResponse);
-        writeStringToStream(outputStream, gson.toJson(getCaseResponse));
+        final SubmitJudgmentRequest submitJudgmentRequest = gson.fromJson(inputString, SubmitJudgmentRequest.class);
+        log.info("Received: {}, serialized into: {}", inputString, submitJudgmentRequest);
+        final SubmitJudgmentResponse submitJudgmentResponse = submitJudgmentHandler.handle(submitJudgmentRequest);
+        log.info("Returning: {}", submitJudgmentResponse);
+        writeStringToStream(outputStream, gson.toJson(submitJudgmentResponse));
     }
 
     private String convertStreamToString(final InputStream inputStream) {

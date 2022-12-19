@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public final class SubmitCaseRequest {
+public final class SubmitJudgmentRequest {
     private final String judge;
     private final Judgment judgment;
 }
