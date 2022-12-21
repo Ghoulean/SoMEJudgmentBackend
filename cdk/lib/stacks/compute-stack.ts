@@ -2,6 +2,7 @@ import { NestedStack, NestedStackProps } from "aws-cdk-lib";
 import {
     ApiDefinition,
     Method,
+    MethodResponse,
     MockIntegration,
     PassthroughBehavior,
     RestApi,
@@ -11,11 +12,10 @@ import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 const CASE_RESOURCE_PATH = "case";
+const JUDGMENT_RESOURCE_PATH = "judgment";
 
 export interface ComputeStackProps extends NestedStackProps {
-    submissionTableArn: string;
-    activeCaseTableArn: string;
-    judgmentTableArn: string;
+    someTableArn: string;
 }
 
 export class ComputeStack extends NestedStack {
@@ -78,15 +78,18 @@ export class ComputeStack extends NestedStack {
             }),
         });
         api.root.addResource(CASE_RESOURCE_PATH);
-        const createCaseMethod: Method = api.root
-            .getResource(CASE_RESOURCE_PATH)!
-            .addMethod("PUT");
-        const submitCaseMethod: Method = api.root
-            .getResource(CASE_RESOURCE_PATH)!
-            .addMethod("POST");
+        api.root.addResource(JUDGMENT_RESOURCE_PATH);
         const getCaseMethod: Method = api.root
             .getResource(CASE_RESOURCE_PATH)!
             .addMethod("GET");
+        const submitJudgmentMethod: Method = api.root
+            .getResource(JUDGMENT_RESOURCE_PATH)!
+            .addMethod("POST");
+        const mockMethodResponse: MethodResponse = {
+            statusCode: "200"
+        }
+        getCaseMethod.addMethodResponse(mockMethodResponse);
+        submitJudgmentMethod.addMethodResponse(mockMethodResponse);
 
         return api;
     }
