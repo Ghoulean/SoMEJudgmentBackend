@@ -11,6 +11,7 @@ import {
     RequestAuthorizer,
     RestApi,
     SpecRestApi,
+    TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
@@ -41,14 +42,22 @@ export class ComputeStack extends NestedStack {
     private buildAuthorizerLambda(): Function {
         return new Function(this, "AuthorizerLambda", {
             runtime: Runtime.NODEJS_14_X,
-            handler: "hi",
+            handler: "index.handler",
             code: Code.fromAsset(
                 path.join(
+                    __dirname,
                     PROJECT_BASE_PATH,
-                    "authorizer_lamda",
+                    "jwt-rsa-aws-custom-authorizer",
                     "custom-authorizer.zip"
                 )
             ),
+            // TODO: do not hardcode
+            environment: {
+                JWKS_URI: "https://dev-hqnpivv6huikhzpy.us.auth0.com/.well-known/jwks.json",
+                AUDIENCE:
+                    "https://kj1sydw9hi.execute-api.us-west-2.amazonaws.com/prod",
+                TOKEN_ISSUER: "https://dev-hqnpivv6huikhzpy.us.auth0.com/",
+            },
         });
     }
 
@@ -68,7 +77,7 @@ export class ComputeStack extends NestedStack {
     }
 
     private buildApiGateway(): RestApi {
-        const auth = new RequestAuthorizer(this, "requestAuthorizer", {
+        const auth = new RequestAuthorizer(this, "SoMERequestAuthorizer", {
             handler: this.authorizerLambda,
             identitySources: [IdentitySource.header("Authorization")],
         });

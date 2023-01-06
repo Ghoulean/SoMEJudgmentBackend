@@ -54,12 +54,12 @@ public final class SubmitJudgmentHandler {
         if (!judgment.getJudgeId().equals(currentActiveCase.getJudgeId())) {
             throw new BadRequestException("judgeId mismatch");
         }
-        if (!judgment.getWinnerId().equals(currentActiveCase.getSubmission1()) &&
-                judgment.getWinnerId().equals(currentActiveCase.getSubmission2())) {
+        if (!judgment.getWinnerId().equals(currentActiveCase.getSubmission1())
+                && judgment.getWinnerId().equals(currentActiveCase.getSubmission2())) {
             throw new BadRequestException("Submission Id mismatch (winner)");
         }
-        if (!judgment.getLoserId().equals(currentActiveCase.getSubmission1()) &&
-                judgment.getLoserId().equals(currentActiveCase.getSubmission2())) {
+        if (!judgment.getLoserId().equals(currentActiveCase.getSubmission1())
+                && judgment.getLoserId().equals(currentActiveCase.getSubmission2())) {
             throw new BadRequestException("Submission Id mismatch (loser)");
         }
         if (Instant.now().minus(FORCE_WAIT_DURATION).isBefore(currentActiveCase.getCreatedAt())) {

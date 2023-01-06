@@ -1,16 +1,12 @@
 package com.ghoulean.somejudgment.lambda;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ws.rs.ForbiddenException;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.ghoulean.somejudgment.dagger.component.DaggerGetCaseComponent;
 import com.ghoulean.somejudgment.dagger.component.GetCaseComponent;
 import com.ghoulean.somejudgment.handler.GetCaseHandler;
@@ -22,11 +18,13 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class GetCaseLambda implements RequestStreamHandler {
+public final class GetCaseLambda implements RequestHandler<Map<String, Object>, Map<String, Object>> {
     @NonNull
     private final GetCaseHandler getCaseHandler;
     @NonNull
     private final Gson gson;
+
+    private static final int SUCCESS_CODE = 200;
 
     public GetCaseLambda() {
         GetCaseComponent getCaseComponent = DaggerGetCaseComponent.create();
@@ -35,36 +33,37 @@ public final class GetCaseLambda implements RequestStreamHandler {
     }
 
     @Override
-    public void handleRequest(@NonNull final InputStream inputStream,
-            @NonNull final OutputStream outputStream,
+    public Map<String, Object> handleRequest(@NonNull final Map<String, Object> input,
             @NonNull final Context context) {
-        final String inputString = convertStreamToString(inputStream);
-        final GetCaseRequest getCaseRequest = gson.fromJson(inputString, GetCaseRequest.class);
-        log.info("Received: {}, serialized into: {}", inputString, getCaseRequest);
+        final GetCaseRequest getCaseRequest = buildGetCaseRequest(input);
+        validateRequest(input, getCaseRequest);
+        log.info("Received: {}, serialized into: {}", input, getCaseRequest);
         final GetCaseResponse getCaseResponse = getCaseHandler.handle(getCaseRequest);
-        log.info("Returning: {}", getCaseResponse);
-        writeStringToStream(outputStream, gson.toJson(getCaseResponse));
+        final Map<String, Object> response = buildResponse(getCaseResponse);
+        log.info("Returning: {}, serialized from: {}", response, getCaseResponse);
+        return response;
     }
 
-    private String convertStreamToString(final InputStream inputStream) {
-        try {
-            final BufferedInputStream bis = new BufferedInputStream(inputStream);
-            final ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            for (int result = bis.read(); result != -1; result = bis.read()) {
-                buf.write((byte) result);
-            }
-            return buf.toString(StandardCharsets.UTF_8.name());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private void validateRequest(@NonNull final Map<String, Object> input,
+            @NonNull final GetCaseRequest getCaseRequest) {
+        @NonNull
+        final Map<String, String> headers = (Map<String, String>) input.get("headers");
+        @NonNull
+        final String judgeIdHeader = headers.get("judgeId");
+        if (!getCaseRequest.getJudgeId().equals(judgeIdHeader)) {
+            throw new ForbiddenException();
         }
     }
 
-    private void writeStringToStream(final OutputStream outputStream, final String str) {
-        try (Writer w = new OutputStreamWriter(outputStream, "UTF-8")) {
-            w.write("Hello, World!");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private GetCaseRequest buildGetCaseRequest(@NonNull final Map<String, Object> input) {
+        return gson.fromJson(input.get("body").toString(), GetCaseRequest.class);
     }
 
+    private Map<String, Object> buildResponse(@NonNull final GetCaseResponse getCaseResponse) {
+        final HashMap<String, Object> response = new HashMap<>();
+        response.put("statusCode", SUCCESS_CODE);
+        response.put("headers", Map.of("Content-Type", "application/json"));
+        response.put("body", gson.toJson(getCaseResponse));
+        return response;
+    }
 }
