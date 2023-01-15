@@ -50,13 +50,13 @@ version = '0.1.0'
 
 task fatJar(type: Jar) {
     jar {
-        archivesBaseName = 'GarbageOncall'
+        archivesBaseName = 'SoMEJudgmentBackend'
         archiveVersion = project.version
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         manifest {
             attributes('Implementation-Title': project.name,
                     'Implementation-Version': project.version,
-                    'Main-Class': 'com.ghoulean.garbageoncall.lambda.OncallUpdateLambda')
+                    'Main-Class': 'com.ghoulean.somejudgment.lambda.GetCaseLambda')
         }
         from {
             configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

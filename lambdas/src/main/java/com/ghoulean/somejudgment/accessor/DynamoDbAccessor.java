@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
@@ -66,8 +67,9 @@ public final class DynamoDbAccessor {
                 .tableName(tableName)
                 .build();
         try {
-            final Map<String, AttributeValue> item = dynamoDB.getItem(request).item();
-            if (item != null) {
+            final GetItemResponse getItemResponse = dynamoDB.getItem(request);
+            if (getItemResponse.hasItem()) {
+                final Map<String, AttributeValue> item = getItemResponse.item();
                 ActiveCase activeCase = ActiveCase.builder()
                         .judgeId(judgeId)
                         .submission1(item.get(ActiveCase.Fields.submission1).s())
@@ -105,15 +107,19 @@ public final class DynamoDbAccessor {
                 .tableName(tableName)
                 .build();
         try {
-            final Map<String, AttributeValue> item = dynamoDB.getItem(request).item();
-            if (item != null) {
+            final GetItemResponse getItemResponse = dynamoDB.getItem(request);
+            if (getItemResponse.hasItem()) {
+                final Map<String, AttributeValue> item = getItemResponse.item();
                 JudgmentCount judgmentCount = JudgmentCount.builder()
                         .amount(Integer.valueOf(item.get(JudgmentCount.Fields.amount).n()))
                         .build();
                 log.info("DynamoDbAccessor::getJudgmentCount: Received tableSize={}", judgmentCount);
                 return judgmentCount;
             } else {
-                throw new RuntimeException("Could not find JudgmentCount ddb entry");
+                log.info("Could not find JudgmentCount ddb entry, defaulting to 0");
+                return JudgmentCount.builder()
+                        .amount(0)
+                        .build();
             }
         } catch (DynamoDbException e) {
             throw new RuntimeException(e);
@@ -227,6 +233,31 @@ public final class DynamoDbAccessor {
             log.info("DynamoDbAccessor::incrementTableSize successful with requestId={}",
                     response.responseMetadata().requestId());
         } catch (DynamoDbException e) {
+            log.info("DynamoDbAccessor::incrementTableSize unsuccessful, likely due to no judgment count entry. Trying to insert:");
+            insertJudgmentCount(submissionType);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void insertJudgmentCount(@NonNull final SubmissionType submissionType) {
+        log.info("DynamoDbAccessor::insertJudgmentCount with submissionType={} and initial amount=1", submissionType);
+        final HashMap<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(PARTITION_KEY,
+                AttributeValue.builder().s(JUDGMENT_COUNT_PARTITION_KEY).build());
+        itemValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentCountSortKey(submissionType)).build());
+        itemValues.put(JudgmentCount.Fields.amount, AttributeValue.builder().n("1").build());
+
+        PutItemRequest request = PutItemRequest.builder()
+                .tableName(tableName)
+                .item(itemValues)
+                .build();
+
+        try {
+            PutItemResponse response = dynamoDB.putItem(request);
+            log.info("DynamoDbAccessor::insertJudgmentCount successful with requestId={}",
+                    response.responseMetadata().requestId());
+        } catch (DynamoDbException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -272,15 +303,15 @@ public final class DynamoDbAccessor {
         return "SUBMISSION#" + submissionType.name();
     }
 
-    private Instant convertEpochSecondToInstant(final String epochSecond) {
+    private Instant convertEpochSecondToInstant(@NonNull final String epochSecond) {
         return Instant.ofEpochSecond(Long.valueOf(epochSecond));
     }
 
-    private String convertInstantToEpochSecond(final Instant instant) {
+    private String convertInstantToEpochSecond(@NonNull final Instant instant) {
         return String.valueOf(instant.getEpochSecond());
     }
 
-    private String generateUpdateExpression(final Map<String, AttributeValue> itemValues) {
+    private String generateUpdateExpression(@NonNull final Map<String, AttributeValue> itemValues) {
         final StringBuilder expressionBuilder = new StringBuilder("SET ");
         for (final String key : itemValues.keySet()) {
             expressionBuilder.append(key + " = :" + key + ",");
@@ -290,7 +321,7 @@ public final class DynamoDbAccessor {
     }
 
     private Map<String, AttributeValue> generateExpressionAttributeValues(
-            final Map<String, AttributeValue> itemValues) {
+            @NonNull final Map<String, AttributeValue> itemValues) {
         final HashMap<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         for (final Map.Entry<String, AttributeValue> entry : itemValues.entrySet()) {
             final String key = entry.getKey();

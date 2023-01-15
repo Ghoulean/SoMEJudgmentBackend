@@ -35,9 +35,10 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
     @Override
     public Map<String, Object> handleRequest(@NonNull final Map<String, Object> input,
             @NonNull final Context context) {
+        log.info("Received request: {}", input);
         final GetCaseRequest getCaseRequest = buildGetCaseRequest(input);
         validateRequest(input, getCaseRequest);
-        log.info("Received: {}, serialized into: {}", input, getCaseRequest);
+        log.info("Serialized request into: {}", getCaseRequest);
         final GetCaseResponse getCaseResponse = getCaseHandler.handle(getCaseRequest);
         final Map<String, Object> response = buildResponse(getCaseResponse);
         log.info("Returning: {}, serialized from: {}", response, getCaseResponse);
@@ -56,7 +57,11 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
     }
 
     private GetCaseRequest buildGetCaseRequest(@NonNull final Map<String, Object> input) {
-        return gson.fromJson(input.get("body").toString(), GetCaseRequest.class);
+        try {
+            return gson.fromJson(input.get("body").toString(), GetCaseRequest.class);
+        } catch (final Exception e) {
+            throw new ForbiddenException(e);
+        }
     }
 
     private Map<String, Object> buildResponse(@NonNull final GetCaseResponse getCaseResponse) {

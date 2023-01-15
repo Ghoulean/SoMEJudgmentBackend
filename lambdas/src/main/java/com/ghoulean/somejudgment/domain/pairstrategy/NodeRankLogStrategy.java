@@ -1,5 +1,7 @@
 package com.ghoulean.somejudgment.domain.pairstrategy;
 
+import java.time.Instant;
+
 import javax.inject.Inject;
 
 import com.ghoulean.somejudgment.accessor.DynamoDbAccessor;
@@ -37,6 +39,8 @@ public final class NodeRankLogStrategy implements PairStrategy {
             .judgeId(judgeId)
             .submission1(submissionManager.getSubmission(nextSubmissionIndex, submissionType).getId())
             .submission2(submissionManager.getSubmission(pairedIndex, submissionType).getId())
+            .createdAt(Instant.now())
+            .createdOptions(options)
             .build();
     }
 

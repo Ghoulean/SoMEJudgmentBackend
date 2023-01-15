@@ -10,6 +10,7 @@ export class RootStack extends Stack {
         const storageStack: StorageStack = new StorageStack(this, "SoMEStorageStack", {});
         const computeStack: ComputeStack = new ComputeStack(this, "SoMEComputeStack", {
             someTableArn: storageStack.someTable.tableArn,
+            someTableName: storageStack.someTable.tableName
         });
     }
 }

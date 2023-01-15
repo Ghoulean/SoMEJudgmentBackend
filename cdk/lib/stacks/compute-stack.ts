@@ -3,6 +3,7 @@ import { NestedStack, NestedStackProps } from "aws-cdk-lib";
 import {
     AuthorizationType,
     IdentitySource,
+    LambdaIntegration,
     Method,
     MethodOptions,
     MethodResponse,
@@ -10,33 +11,43 @@ import {
     PassthroughBehavior,
     RequestAuthorizer,
     RestApi,
-    SpecRestApi,
-    TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
+import { Policy, PolicyDocument, Role } from "aws-cdk-lib/aws-iam";
+import { getDynamoDbAccessPolicy, LAMBDA_MANAGED_POLICY, LAMBDA_SERVICE_PRINCIPAL } from "../helper/iam";
 
 const CASE_RESOURCE_PATH = "case";
 const JUDGMENT_RESOURCE_PATH = "judgment";
 
 const PROJECT_BASE_PATH = "../../../";
+const JAR_FILE_LOCATION = path.join(
+    __dirname,
+    PROJECT_BASE_PATH,
+    "lambdas",
+    "build",
+    "distributions",
+    "SoMEJudgmentBackend-0.1.0.zip"
+);
 
 export interface ComputeStackProps extends NestedStackProps {
     someTableArn: string;
+    someTableName: string;
 }
 
 export class ComputeStack extends NestedStack {
     public readonly authorizerLambda: Function;
-    /*public readonly submitJudgmentLambda: Function;
-    public readonly getCaseLambda: Function;*/
-    public readonly apiGateway: SpecRestApi;
+    //public readonly submitJudgmentLambda: Function;
+    public readonly getCaseLambda: Function;
+    public readonly apiGateway: RestApi;
 
-    constructor(scope: Construct, id: string, props?: ComputeStackProps) {
+    constructor(scope: Construct, id: string, props: ComputeStackProps) {
         super(scope, id, props);
+        this.apiGateway = this.instantiateApiGateway();
         this.authorizerLambda = this.buildAuthorizerLambda();
         //this.submitJudgmentLambda = this.buildSubmitJudgmentLambda();
-        //this.getCaseLambda = this.buildGetCaseLambda();
-        this.apiGateway = this.buildApiGateway();
+        this.getCaseLambda = this.buildGetCaseLambda(props.someTableArn, props.someTableName);
+        this.setupApiGatewayMethods();
     }
 
     private buildAuthorizerLambda(): Function {
@@ -51,12 +62,10 @@ export class ComputeStack extends NestedStack {
                     "custom-authorizer.zip"
                 )
             ),
-            // TODO: do not hardcode
             environment: {
-                JWKS_URI: "https://dev-hqnpivv6huikhzpy.us.auth0.com/.well-known/jwks.json",
-                AUDIENCE:
-                    "https://kj1sydw9hi.execute-api.us-west-2.amazonaws.com/prod",
-                TOKEN_ISSUER: "https://dev-hqnpivv6huikhzpy.us.auth0.com/",
+                JWKS_URI: process.env.JWKS_URI!,
+                AUDIENCE: process.env.AUDIENCE!,
+                TOKEN_ISSUER: process.env.TOKEN_ISSUER!,
             },
         });
     }
@@ -68,20 +77,28 @@ export class ComputeStack extends NestedStack {
             code: Code.fromAsset(""),
         });
     }
-    private buildGetCaseLambda(): Function {
+    private buildGetCaseLambda(someTableArn: string, someTableName: string): Function {
         return new Function(this, "GetCaseLambda", {
             runtime: Runtime.JAVA_11,
-            handler: "hi",
-            code: Code.fromAsset(""),
+            handler: "com.ghoulean.somejudgment.lambda.GetCaseLambda",
+            memorySize: 1024,
+            code: Code.fromAsset(JAR_FILE_LOCATION),
+            environment: {
+                TABLE_NAME: someTableName
+            },
+            role: new Role(this, "GetCaseLambdaRole", {
+                assumedBy: LAMBDA_SERVICE_PRINCIPAL,
+                managedPolicies: [LAMBDA_MANAGED_POLICY],
+                inlinePolicies: {
+                    "default": new PolicyDocument({
+                        statements: [getDynamoDbAccessPolicy(someTableArn)]
+                    })
+                }
+            })
         });
     }
 
-    private buildApiGateway(): RestApi {
-        const auth = new RequestAuthorizer(this, "SoMERequestAuthorizer", {
-            handler: this.authorizerLambda,
-            identitySources: [IdentitySource.header("Authorization")],
-        });
-
+    private instantiateApiGateway(): RestApi {
         const api: RestApi = new RestApi(this, "SoMEJudgmentRestApi", {
             defaultIntegration: new MockIntegration({
                 integrationResponses: [
@@ -95,8 +112,18 @@ export class ComputeStack extends NestedStack {
                 },
             }),
         });
-        api.root.addResource(CASE_RESOURCE_PATH);
-        api.root.addResource(JUDGMENT_RESOURCE_PATH);
+
+        return api;
+    }
+
+    private setupApiGatewayMethods() {
+        this.apiGateway.root.addResource(CASE_RESOURCE_PATH);
+        this.apiGateway.root.addResource(JUDGMENT_RESOURCE_PATH);
+
+        const auth = new RequestAuthorizer(this, "SoMERequestAuthorizer", {
+            handler: this.authorizerLambda,
+            identitySources: [IdentitySource.header("Authorization")],
+        });
 
         const mockMethodResponse: MethodResponse = {
             statusCode: "200",
@@ -106,13 +133,21 @@ export class ComputeStack extends NestedStack {
             authorizer: auth,
             methodResponses: [mockMethodResponse],
         };
-        const getCaseMethod: Method = api.root
+        const getCaseMethod: Method = this.apiGateway.root
             .getResource(CASE_RESOURCE_PATH)!
-            .addMethod("GET", undefined, methodOptions);
-        const submitJudgmentMethod: Method = api.root
+            .addMethod(
+                "POST",
+                new LambdaIntegration(this.getCaseLambda, {
+                    allowTestInvoke: true,
+                }),
+                {
+                    authorizationType: AuthorizationType.CUSTOM,
+                    authorizer: auth,
+                    methodResponses: [{ statusCode: "200" }, { statusCode: "403" }],
+                }
+            );
+        const submitJudgmentMethod: Method = this.apiGateway.root
             .getResource(JUDGMENT_RESOURCE_PATH)!
             .addMethod("POST", undefined, methodOptions);
-
-        return api;
     }
 }
