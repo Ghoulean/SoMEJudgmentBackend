@@ -81,7 +81,7 @@ public final class DynamoDbAccessor {
                 log.info("DynamoDbAccessor::getActiveCase: Received activeCase={} for judgeId={}", activeCase, judgeId);
                 return activeCase;
             } else {
-                log.info("Could not find ActiveCase ddb entry for {}", judgeId);
+                log.info("DynamoDbAccessor::getActiveCase: Could not find ActiveCase ddb entry for {}", judgeId);
                 return null;
             }
         } catch (DynamoDbException e) {
@@ -116,7 +116,7 @@ public final class DynamoDbAccessor {
                 log.info("DynamoDbAccessor::getJudgmentCount: Received tableSize={}", judgmentCount);
                 return judgmentCount;
             } else {
-                log.info("Could not find JudgmentCount ddb entry, defaulting to 0");
+                log.info("DynamoDbAccessor::getJudgmentCount: Could not find JudgmentCount ddb entry, defaulting to 0");
                 return JudgmentCount.builder()
                         .amount(0)
                         .build();
@@ -162,7 +162,7 @@ public final class DynamoDbAccessor {
         itemValues.put(ActiveCase.Fields.submission1, AttributeValue.builder().s(activeCase.getSubmission1()).build());
         itemValues.put(ActiveCase.Fields.submission2, AttributeValue.builder().s(activeCase.getSubmission2()).build());
         itemValues.put(ActiveCase.Fields.createdAt,
-                AttributeValue.builder().s(convertInstantToEpochSecond(activeCase.getCreatedAt())).build());
+                AttributeValue.builder().n(convertInstantToEpochSecond(activeCase.getCreatedAt())).build());
         itemValues.put(ActiveCase.Fields.createdOptions,
                 AttributeValue.builder().s(gson.toJson(activeCase.getCreatedOptions())).build());
 

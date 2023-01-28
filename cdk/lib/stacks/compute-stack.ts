@@ -37,7 +37,7 @@ export interface ComputeStackProps extends NestedStackProps {
 
 export class ComputeStack extends NestedStack {
     public readonly authorizerLambda: Function;
-    //public readonly submitJudgmentLambda: Function;
+    public readonly submitJudgmentLambda: Function;
     public readonly getCaseLambda: Function;
     public readonly apiGateway: RestApi;
 
@@ -45,7 +45,7 @@ export class ComputeStack extends NestedStack {
         super(scope, id, props);
         this.apiGateway = this.instantiateApiGateway();
         this.authorizerLambda = this.buildAuthorizerLambda();
-        //this.submitJudgmentLambda = this.buildSubmitJudgmentLambda();
+        this.submitJudgmentLambda = this.buildSubmitJudgmentLambda(props.someTableArn, props.someTableName);
         this.getCaseLambda = this.buildGetCaseLambda(props.someTableArn, props.someTableName);
         this.setupApiGatewayMethods();
     }
@@ -70,11 +70,24 @@ export class ComputeStack extends NestedStack {
         });
     }
 
-    private buildSubmitJudgmentLambda(): Function {
+    private buildSubmitJudgmentLambda(someTableArn: string, someTableName: string): Function {
         return new Function(this, "SubmitJudgmentLambda", {
             runtime: Runtime.JAVA_11,
-            handler: "hi",
-            code: Code.fromAsset(""),
+            handler: "com.ghoulean.somejudgment.lambda.SubmitJudgmentLambda",
+            memorySize: 1024,
+            code: Code.fromAsset(JAR_FILE_LOCATION),
+            environment: {
+                TABLE_NAME: someTableName
+            },
+            role: new Role(this, "SubmitJudgmentLambdaRole", {
+                assumedBy: LAMBDA_SERVICE_PRINCIPAL,
+                managedPolicies: [LAMBDA_MANAGED_POLICY],
+                inlinePolicies: {
+                    "default": new PolicyDocument({
+                        statements: [getDynamoDbAccessPolicy(someTableArn)]
+                    })
+                }
+            })
         });
     }
     private buildGetCaseLambda(someTableArn: string, someTableName: string): Function {

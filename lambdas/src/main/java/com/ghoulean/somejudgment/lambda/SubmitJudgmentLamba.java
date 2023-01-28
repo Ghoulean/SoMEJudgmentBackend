@@ -1,19 +1,16 @@
 package com.ghoulean.somejudgment.lambda;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.ws.rs.ForbiddenException;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.ghoulean.somejudgment.dagger.component.DaggerSubmitJudgmentComponent;
 import com.ghoulean.somejudgment.dagger.component.SubmitJudgmentComponent;
 import com.ghoulean.somejudgment.handler.SubmitJudgmentHandler;
+import com.ghoulean.somejudgment.jwt.JwtValidator;
 import com.ghoulean.somejudgment.model.request.SubmitJudgmentRequest;
 import com.ghoulean.somejudgment.model.response.SubmitJudgmentResponse;
 import com.google.gson.Gson;
@@ -22,11 +19,13 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class SubmitJudgmentLamba implements RequestStreamHandler {
+public final class SubmitJudgmentLamba implements RequestHandler<Map<String, Object>, Map<String, Object>> {
     @NonNull
     private final SubmitJudgmentHandler submitJudgmentHandler;
     @NonNull
     private final Gson gson;
+
+    private static final int SUCCESS_CODE = 200;
 
     public SubmitJudgmentLamba() {
         SubmitJudgmentComponent submitJudgmentComponent = DaggerSubmitJudgmentComponent.create();
@@ -35,36 +34,52 @@ public final class SubmitJudgmentLamba implements RequestStreamHandler {
     }
 
     @Override
-    public void handleRequest(@NonNull final InputStream inputStream,
-            @NonNull final OutputStream outputStream,
+    public Map<String, Object> handleRequest(@NonNull final Map<String, Object> input,
             @NonNull final Context context) {
-        final String inputString = convertStreamToString(inputStream);
-        final SubmitJudgmentRequest submitJudgmentRequest = gson.fromJson(inputString, SubmitJudgmentRequest.class);
-        log.info("Received: {}, serialized into: {}", inputString, submitJudgmentRequest);
+        log.info("Received request: {}", input);
+        final SubmitJudgmentRequest submitJudgmentRequest = buildSubmitJudgmentRequest(input);
+        validateRequest(input, submitJudgmentRequest);
+        log.info("Serialized request into: {}", submitJudgmentRequest);
         final SubmitJudgmentResponse submitJudgmentResponse = submitJudgmentHandler.handle(submitJudgmentRequest);
-        log.info("Returning: {}", submitJudgmentResponse);
-        writeStringToStream(outputStream, gson.toJson(submitJudgmentResponse));
+        final Map<String, Object> response = buildResponse(submitJudgmentResponse);
+        log.info("Returning: {}, serialized from: {}", response, submitJudgmentResponse);
+        return response;
+
     }
 
-    private String convertStreamToString(final InputStream inputStream) {
+    private void validateRequest(@NonNull final Map<String, Object> input,
+            @NonNull final SubmitJudgmentRequest submitJudgmentRequest) {
+        final String jwtToken = getJwtToken(input);
         try {
-            final BufferedInputStream bis = new BufferedInputStream(inputStream);
-            final ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            for (int result = bis.read(); result != -1; result = bis.read()) {
-                buf.write((byte) result);
-            }
-            return buf.toString(StandardCharsets.UTF_8.name());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            JwtValidator.verifyUserId(jwtToken, submitJudgmentRequest.getJudgment().getJudgeId());
+        } catch (Exception e) {
+            throw new ForbiddenException();
         }
     }
 
-    private void writeStringToStream(final OutputStream outputStream, final String str) {
-        try (Writer w = new OutputStreamWriter(outputStream, "UTF-8")) {
-            w.write("Hello, World!");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private String getJwtToken(@NonNull final Map<String, Object> input) {
+        @NonNull
+        final Map<String, String> headers = (Map<String, String>) input.get("headers");
+        @NonNull
+        final String authHeader = headers.get("Authorization");
+        final String jwtToken = authHeader.split(" ")[1];
+        return jwtToken;
+    }
+
+    private SubmitJudgmentRequest buildSubmitJudgmentRequest(@NonNull final Map<String, Object> input) {
+        try {
+            return gson.fromJson(input.get("body").toString(), SubmitJudgmentRequest.class);
+        } catch (final Exception e) {
+            throw new ForbiddenException(e);
         }
+    }
+
+    private Map<String, Object> buildResponse(@NonNull final SubmitJudgmentResponse submitJudgmentResponse) {
+        final HashMap<String, Object> response = new HashMap<>();
+        response.put("statusCode", SUCCESS_CODE);
+        response.put("headers", Map.of("Content-Type", "application/json"));
+        response.put("body", gson.toJson(submitJudgmentResponse));
+        return response;
     }
 
 }

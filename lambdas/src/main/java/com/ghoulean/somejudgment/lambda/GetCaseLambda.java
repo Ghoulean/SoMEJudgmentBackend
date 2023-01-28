@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.ghoulean.somejudgment.dagger.component.DaggerGetCaseComponent;
 import com.ghoulean.somejudgment.dagger.component.GetCaseComponent;
 import com.ghoulean.somejudgment.handler.GetCaseHandler;
+import com.ghoulean.somejudgment.jwt.JwtValidator;
 import com.ghoulean.somejudgment.model.request.GetCaseRequest;
 import com.ghoulean.somejudgment.model.response.GetCaseResponse;
 import com.google.gson.Gson;
@@ -47,13 +48,21 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
 
     private void validateRequest(@NonNull final Map<String, Object> input,
             @NonNull final GetCaseRequest getCaseRequest) {
+        final String jwtToken = getJwtToken(input);
+        try {
+            JwtValidator.verifyUserId(jwtToken, getCaseRequest.getJudgeId());
+        } catch (Exception e) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private String getJwtToken(@NonNull final Map<String, Object> input) {
         @NonNull
         final Map<String, String> headers = (Map<String, String>) input.get("headers");
         @NonNull
-        final String judgeIdHeader = headers.get("judgeId");
-        if (!getCaseRequest.getJudgeId().equals(judgeIdHeader)) {
-            throw new ForbiddenException();
-        }
+        final String authHeader = headers.get("Authorization");
+        final String jwtToken = authHeader.split(" ")[1];
+        return jwtToken;
     }
 
     private GetCaseRequest buildGetCaseRequest(@NonNull final Map<String, Object> input) {
