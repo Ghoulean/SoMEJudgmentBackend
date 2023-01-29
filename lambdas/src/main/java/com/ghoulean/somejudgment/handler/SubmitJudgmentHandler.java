@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import javax.inject.Inject;
-import javax.ws.rs.BadRequestException;
 
 import com.ghoulean.somejudgment.accessor.DynamoDbAccessor;
 import com.ghoulean.somejudgment.domain.submissionmanager.SubmissionManager;
@@ -14,6 +13,7 @@ import com.ghoulean.somejudgment.model.pojo.Judgment;
 import com.ghoulean.somejudgment.model.request.SubmitJudgmentRequest;
 import com.ghoulean.somejudgment.model.response.SubmitJudgmentResponse;
 
+import jakarta.ws.rs.BadRequestException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

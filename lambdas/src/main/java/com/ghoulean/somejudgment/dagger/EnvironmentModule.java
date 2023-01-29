@@ -22,7 +22,7 @@ public final class EnvironmentModule {
     public static String provideTableName() {
         return getEnv(Constants.TABLE_NAME);
     }
-
+    
     private static String getEnv(@NonNull final String key) {
         return System.getenv(key);
     }

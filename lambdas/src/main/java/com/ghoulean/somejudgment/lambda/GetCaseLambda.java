@@ -3,8 +3,6 @@ package com.ghoulean.somejudgment.lambda;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.ForbiddenException;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.ghoulean.somejudgment.dagger.component.DaggerGetCaseComponent;
@@ -15,6 +13,7 @@ import com.ghoulean.somejudgment.model.request.GetCaseRequest;
 import com.ghoulean.somejudgment.model.response.GetCaseResponse;
 import com.google.gson.Gson;
 
+import jakarta.ws.rs.ForbiddenException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,7 +51,7 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
         try {
             JwtValidator.verifyUserId(jwtToken, getCaseRequest.getJudgeId());
         } catch (Exception e) {
-            throw new ForbiddenException();
+            throw new ForbiddenException(e);
         }
     }
 
@@ -62,6 +61,7 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
         @NonNull
         final String authHeader = headers.get("Authorization");
         final String jwtToken = authHeader.split(" ")[1];
+        System.out.println(jwtToken);
         return jwtToken;
     }
 

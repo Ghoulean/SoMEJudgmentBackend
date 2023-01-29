@@ -3,8 +3,6 @@ package com.ghoulean.somejudgment.lambda;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.ForbiddenException;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.ghoulean.somejudgment.dagger.component.DaggerSubmitJudgmentComponent;
@@ -15,6 +13,7 @@ import com.ghoulean.somejudgment.model.request.SubmitJudgmentRequest;
 import com.ghoulean.somejudgment.model.response.SubmitJudgmentResponse;
 import com.google.gson.Gson;
 
+import jakarta.ws.rs.ForbiddenException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
