@@ -15,7 +15,11 @@ import {
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { Policy, PolicyDocument, Role } from "aws-cdk-lib/aws-iam";
-import { getDynamoDbAccessPolicy, LAMBDA_MANAGED_POLICY, LAMBDA_SERVICE_PRINCIPAL } from "../helper/iam";
+import {
+    getDynamoDbAccessPolicy,
+    LAMBDA_MANAGED_POLICY,
+    LAMBDA_SERVICE_PRINCIPAL,
+} from "../helper/iam";
 
 const CASE_RESOURCE_PATH = "case";
 const JUDGMENT_RESOURCE_PATH = "judgment";
@@ -45,8 +49,14 @@ export class ComputeStack extends NestedStack {
         super(scope, id, props);
         this.apiGateway = this.instantiateApiGateway();
         this.authorizerLambda = this.buildAuthorizerLambda();
-        this.submitJudgmentLambda = this.buildSubmitJudgmentLambda(props.someTableArn, props.someTableName);
-        this.getCaseLambda = this.buildGetCaseLambda(props.someTableArn, props.someTableName);
+        this.submitJudgmentLambda = this.buildSubmitJudgmentLambda(
+            props.someTableArn,
+            props.someTableName
+        );
+        this.getCaseLambda = this.buildGetCaseLambda(
+            props.someTableArn,
+            props.someTableName
+        );
         this.setupApiGatewayMethods();
     }
 
@@ -70,44 +80,50 @@ export class ComputeStack extends NestedStack {
         });
     }
 
-    private buildSubmitJudgmentLambda(someTableArn: string, someTableName: string): Function {
+    private buildSubmitJudgmentLambda(
+        someTableArn: string,
+        someTableName: string
+    ): Function {
         return new Function(this, "SubmitJudgmentLambda", {
             runtime: Runtime.JAVA_11,
             handler: "com.ghoulean.somejudgment.lambda.SubmitJudgmentLambda",
             memorySize: 1024,
             code: Code.fromAsset(JAR_FILE_LOCATION),
             environment: {
-                TABLE_NAME: someTableName
+                TABLE_NAME: someTableName,
             },
             role: new Role(this, "SubmitJudgmentLambdaRole", {
                 assumedBy: LAMBDA_SERVICE_PRINCIPAL,
                 managedPolicies: [LAMBDA_MANAGED_POLICY],
                 inlinePolicies: {
-                    "default": new PolicyDocument({
-                        statements: [getDynamoDbAccessPolicy(someTableArn)]
-                    })
-                }
-            })
+                    default: new PolicyDocument({
+                        statements: [getDynamoDbAccessPolicy(someTableArn)],
+                    }),
+                },
+            }),
         });
     }
-    private buildGetCaseLambda(someTableArn: string, someTableName: string): Function {
+    private buildGetCaseLambda(
+        someTableArn: string,
+        someTableName: string
+    ): Function {
         return new Function(this, "GetCaseLambda", {
             runtime: Runtime.JAVA_11,
             handler: "com.ghoulean.somejudgment.lambda.GetCaseLambda",
             memorySize: 1024,
             code: Code.fromAsset(JAR_FILE_LOCATION),
             environment: {
-                TABLE_NAME: someTableName
+                TABLE_NAME: someTableName,
             },
             role: new Role(this, "GetCaseLambdaRole", {
                 assumedBy: LAMBDA_SERVICE_PRINCIPAL,
                 managedPolicies: [LAMBDA_MANAGED_POLICY],
                 inlinePolicies: {
-                    "default": new PolicyDocument({
-                        statements: [getDynamoDbAccessPolicy(someTableArn)]
-                    })
-                }
-            })
+                    default: new PolicyDocument({
+                        statements: [getDynamoDbAccessPolicy(someTableArn)],
+                    }),
+                },
+            }),
         });
     }
 
@@ -156,11 +172,27 @@ export class ComputeStack extends NestedStack {
                 {
                     authorizationType: AuthorizationType.CUSTOM,
                     authorizer: auth,
-                    methodResponses: [{ statusCode: "200" }, { statusCode: "403" }],
+                    methodResponses: [
+                        { statusCode: "200" },
+                        { statusCode: "403" },
+                    ],
                 }
             );
         const submitJudgmentMethod: Method = this.apiGateway.root
             .getResource(JUDGMENT_RESOURCE_PATH)!
-            .addMethod("POST", undefined, methodOptions);
+            .addMethod(
+                "POST",
+                new LambdaIntegration(this.submitJudgmentLambda, {
+                    allowTestInvoke: true,
+                }),
+                {
+                    authorizationType: AuthorizationType.CUSTOM,
+                    authorizer: auth,
+                    methodResponses: [
+                        { statusCode: "200" },
+                        { statusCode: "403" },
+                    ],
+                }
+            );
     }
 }

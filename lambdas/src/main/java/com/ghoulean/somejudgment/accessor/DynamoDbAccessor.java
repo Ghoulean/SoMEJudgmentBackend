@@ -65,6 +65,7 @@ public final class DynamoDbAccessor {
         final GetItemRequest request = GetItemRequest.builder()
                 .key(keyToGet)
                 .tableName(tableName)
+                .consistentRead(true)
                 .build();
         try {
             final GetItemResponse getItemResponse = dynamoDB.getItem(request);
@@ -105,6 +106,7 @@ public final class DynamoDbAccessor {
         final GetItemRequest request = GetItemRequest.builder()
                 .key(keyToGet)
                 .tableName(tableName)
+                .consistentRead(true)
                 .build();
         try {
             final GetItemResponse getItemResponse = dynamoDB.getItem(request);
@@ -233,7 +235,8 @@ public final class DynamoDbAccessor {
             log.info("DynamoDbAccessor::incrementTableSize successful with requestId={}",
                     response.responseMetadata().requestId());
         } catch (DynamoDbException e) {
-            log.info("DynamoDbAccessor::incrementTableSize unsuccessful, likely due to no judgment count entry. Trying to insert:");
+            log.info("DynamoDbAccessor::incrementTableSize unsuccessful, "
+                    + "likely due to no judgment count entry. Trying to insert:");
             insertJudgmentCount(submissionType);
         } catch (Exception e) {
             throw new RuntimeException(e);

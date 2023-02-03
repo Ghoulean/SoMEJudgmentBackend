@@ -14,11 +14,12 @@ export function getDynamoDbAccessPolicy(tableArn: string): PolicyStatement {
   return new PolicyStatement({
     actions: [
       "dynamodb:BatchGetItem",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:DeleteItem",
       "dynamodb:GetItem",
+      "dynamodb:PutItem",
       "dynamodb:Query",
       "dynamodb:Scan",
-      "dynamodb:BatchWriteItem",
-      "dynamodb:PutItem",
       "dynamodb:UpdateItem",
     ],
     effect: Effect.ALLOW,

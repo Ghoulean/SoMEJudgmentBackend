@@ -10,7 +10,7 @@ import software.amazon.awssdk.regions.Region;
 
 @Module
 @UtilityClass
-@SuppressWarnings({"checkstyle:hideutilityclassconstructor"})
+@SuppressWarnings({ "checkstyle:hideutilityclassconstructor" })
 public final class EnvironmentModule {
     @Provides
     public static Region provideAwsRegion() {
@@ -22,7 +22,7 @@ public final class EnvironmentModule {
     public static String provideTableName() {
         return getEnv(Constants.TABLE_NAME);
     }
-    
+
     private static String getEnv(@NonNull final String key) {
         return System.getenv(key);
     }

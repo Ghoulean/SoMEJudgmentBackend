@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class SubmitJudgmentHandler {
     private @NonNull final DynamoDbAccessor dynamoDbAccessor;
     private @NonNull final SubmissionManager submissionManager;
-    private static final Duration FORCE_WAIT_DURATION = Duration.ofMinutes(2);
+    private static final Duration FORCE_WAIT_DURATION = Duration.ofMinutes(0);
 
     @Inject
     public SubmitJudgmentHandler(@NonNull final DynamoDbAccessor dynamoDbAccessor,
@@ -50,16 +50,19 @@ public final class SubmitJudgmentHandler {
     }
 
     private void validateJudgmentOrThrowException(@NonNull final Judgment judgment,
-            @NonNull final ActiveCase currentActiveCase) {
+            final ActiveCase currentActiveCase) {
+        if (currentActiveCase == null) {
+            throw new BadRequestException("No active case");
+        }
         if (!judgment.getJudgeId().equals(currentActiveCase.getJudgeId())) {
             throw new BadRequestException("judgeId mismatch");
         }
         if (!judgment.getWinnerId().equals(currentActiveCase.getSubmission1())
-                && judgment.getWinnerId().equals(currentActiveCase.getSubmission2())) {
+                && !judgment.getWinnerId().equals(currentActiveCase.getSubmission2())) {
             throw new BadRequestException("Submission Id mismatch (winner)");
         }
         if (!judgment.getLoserId().equals(currentActiveCase.getSubmission1())
-                && judgment.getLoserId().equals(currentActiveCase.getSubmission2())) {
+                && !judgment.getLoserId().equals(currentActiveCase.getSubmission2())) {
             throw new BadRequestException("Submission Id mismatch (loser)");
         }
         if (Instant.now().minus(FORCE_WAIT_DURATION).isBefore(currentActiveCase.getCreatedAt())) {

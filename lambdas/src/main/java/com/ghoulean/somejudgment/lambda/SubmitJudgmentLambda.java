@@ -18,7 +18,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class SubmitJudgmentLamba implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+public final class SubmitJudgmentLambda implements RequestHandler<Map<String, Object>, Map<String, Object>> {
     @NonNull
     private final SubmitJudgmentHandler submitJudgmentHandler;
     @NonNull
@@ -26,7 +26,7 @@ public final class SubmitJudgmentLamba implements RequestHandler<Map<String, Obj
 
     private static final int SUCCESS_CODE = 200;
 
-    public SubmitJudgmentLamba() {
+    public SubmitJudgmentLambda() {
         SubmitJudgmentComponent submitJudgmentComponent = DaggerSubmitJudgmentComponent.create();
         submitJudgmentHandler = submitJudgmentComponent.getSubmitJudgmentHandler();
         gson = submitJudgmentComponent.getGson();
@@ -43,7 +43,6 @@ public final class SubmitJudgmentLamba implements RequestHandler<Map<String, Obj
         final Map<String, Object> response = buildResponse(submitJudgmentResponse);
         log.info("Returning: {}, serialized from: {}", response, submitJudgmentResponse);
         return response;
-
     }
 
     private void validateRequest(@NonNull final Map<String, Object> input,
