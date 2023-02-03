@@ -1,0 +1,21 @@
+{
+  "name": "somejudgmenttests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "author": "Ghoulean Algebra",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.254.0",
+    "@aws-sdk/client-sqs": "^3.259.0",
+    "@aws-sdk/client-sts": "^3.259.0",
+    "axios": "^1.2.2",
+    "chalk": "^5.2.0",
+    "dotenv": "^16.0.3",
+    "jws": "^4.0.0"
+  }
+}
