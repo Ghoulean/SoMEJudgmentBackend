@@ -68,5 +68,5 @@ Response body:
 
 ## TODO:
 
-1. Add test cases
+1. Add unit test cases
 2. Javadocs
