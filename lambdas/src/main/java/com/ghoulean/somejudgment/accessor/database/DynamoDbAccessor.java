@@ -1,4 +1,4 @@
-package com.ghoulean.somejudgment.accessor;
+package com.ghoulean.somejudgment.accessor.database;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 @Slf4j
 @Singleton
-public final class DynamoDbAccessor {
+public final class DynamoDbAccessor implements DatabaseAccessor {
     private static final String PARTITION_KEY = "PK";
     private static final String SORT_KEY = "SK";
     private static final String ACTIVE_CASE_SORT_KEY = "CASE#ACTIVE";
@@ -134,10 +134,10 @@ public final class DynamoDbAccessor {
         log.info("DynamoDbAccessor::insertJudgment invoked with judgment={}", judgment);
         final HashMap<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(createUserIdPartitionKey(judgment.getJudgeId())).build());
-        itemValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentSortKey()).build());
-        itemValues.put(Judgment.Fields.winnerId, AttributeValue.builder().s(judgment.getWinnerId()).build());
-        itemValues.put(Judgment.Fields.loserId, AttributeValue.builder().s(judgment.getLoserId()).build());
+                AttributeValue.fromS(createUserIdPartitionKey(judgment.getJudgeId())));
+        itemValues.put(SORT_KEY, AttributeValue.fromS(createJudgmentSortKey()));
+        itemValues.put(Judgment.Fields.winnerId, AttributeValue.fromS(judgment.getWinnerId()));
+        itemValues.put(Judgment.Fields.loserId, AttributeValue.fromS(judgment.getLoserId()));
 
         PutItemRequest request = PutItemRequest.builder()
                 .tableName(tableName)
@@ -159,14 +159,14 @@ public final class DynamoDbAccessor {
         final HashMap<String, AttributeValue> keyValues = new HashMap<>();
         final HashMap<String, AttributeValue> itemValues = new HashMap<>();
         keyValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(createUserIdPartitionKey(activeCase.getJudgeId())).build());
-        keyValues.put(SORT_KEY, AttributeValue.builder().s(ACTIVE_CASE_SORT_KEY).build());
-        itemValues.put(ActiveCase.Fields.submission1, AttributeValue.builder().s(activeCase.getSubmission1()).build());
-        itemValues.put(ActiveCase.Fields.submission2, AttributeValue.builder().s(activeCase.getSubmission2()).build());
+                AttributeValue.fromS(createUserIdPartitionKey(activeCase.getJudgeId())));
+        keyValues.put(SORT_KEY, AttributeValue.fromS(ACTIVE_CASE_SORT_KEY));
+        itemValues.put(ActiveCase.Fields.submission1, AttributeValue.fromS(activeCase.getSubmission1()));
+        itemValues.put(ActiveCase.Fields.submission2, AttributeValue.fromS(activeCase.getSubmission2()));
         itemValues.put(ActiveCase.Fields.createdAt,
-                AttributeValue.builder().n(convertInstantToEpochSecond(activeCase.getCreatedAt())).build());
+                AttributeValue.fromN(convertInstantToEpochSecond(activeCase.getCreatedAt())));
         itemValues.put(ActiveCase.Fields.createdOptions,
-                AttributeValue.builder().s(gson.toJson(activeCase.getCreatedOptions())).build());
+                AttributeValue.fromS(gson.toJson(activeCase.getCreatedOptions())));
 
         UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName(tableName)
@@ -190,9 +190,9 @@ public final class DynamoDbAccessor {
         final HashMap<String, AttributeValue> keyValues = new HashMap<>();
         final HashMap<String, AttributeValue> itemValues = new HashMap<>();
         keyValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(createUserIdPartitionKey(feedback.getJudgeId())).build());
-        keyValues.put(SORT_KEY, AttributeValue.builder().s(createFeedbackSortKey(feedback.getSubmissionId())).build());
-        itemValues.put(Feedback.Fields.feedback, AttributeValue.builder().s(feedback.getFeedback()).build());
+                AttributeValue.fromS(createUserIdPartitionKey(feedback.getJudgeId())));
+        keyValues.put(SORT_KEY, AttributeValue.fromS(createFeedbackSortKey(feedback.getSubmissionId())));
+        itemValues.put(Feedback.Fields.feedback, AttributeValue.fromS(feedback.getFeedback()));
 
         UpdateItemRequest request = UpdateItemRequest.builder()
                 .tableName(tableName)
@@ -215,8 +215,8 @@ public final class DynamoDbAccessor {
         log.info("DynamoDbAccessor::incrementJudgmentCount with submissionType={}", submissionType);
         final HashMap<String, AttributeValue> keyValues = new HashMap<>();
         keyValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(JUDGMENT_COUNT_PARTITION_KEY).build());
-        keyValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentCountSortKey(submissionType)).build());
+                AttributeValue.fromS(JUDGMENT_COUNT_PARTITION_KEY));
+        keyValues.put(SORT_KEY, AttributeValue.fromS(createJudgmentCountSortKey(submissionType)));
 
         final String updateExpression = String.format("SET %s = %s + :c", JudgmentCount.Fields.amount,
                 JudgmentCount.Fields.amount);
@@ -236,7 +236,7 @@ public final class DynamoDbAccessor {
                     response.responseMetadata().requestId());
         } catch (DynamoDbException e) {
             log.info("DynamoDbAccessor::incrementTableSize unsuccessful, "
-                    + "likely due to no judgment count entry. Trying to insert:");
+                    + "likely due to no judgment count entry. Trying to insert with count=1:");
             insertJudgmentCount(submissionType);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -247,9 +247,9 @@ public final class DynamoDbAccessor {
         log.info("DynamoDbAccessor::insertJudgmentCount with submissionType={} and initial amount=1", submissionType);
         final HashMap<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(JUDGMENT_COUNT_PARTITION_KEY).build());
-        itemValues.put(SORT_KEY, AttributeValue.builder().s(createJudgmentCountSortKey(submissionType)).build());
-        itemValues.put(JudgmentCount.Fields.amount, AttributeValue.builder().n("1").build());
+                AttributeValue.fromS(JUDGMENT_COUNT_PARTITION_KEY));
+        itemValues.put(SORT_KEY, AttributeValue.fromS(createJudgmentCountSortKey(submissionType)));
+        itemValues.put(JudgmentCount.Fields.amount, AttributeValue.fromN("1"));
 
         PutItemRequest request = PutItemRequest.builder()
                 .tableName(tableName)
@@ -271,8 +271,8 @@ public final class DynamoDbAccessor {
         log.info("DynamoDbAccessor::deleteActiveCase with judgeId={}", judgeId);
         HashMap<String, AttributeValue> keyValues = new HashMap<>();
         keyValues.put(PARTITION_KEY,
-                AttributeValue.builder().s(createUserIdPartitionKey(judgeId)).build());
-        keyValues.put(SORT_KEY, AttributeValue.builder().s(ACTIVE_CASE_SORT_KEY).build());
+                AttributeValue.fromS(createUserIdPartitionKey(judgeId)));
+        keyValues.put(SORT_KEY, AttributeValue.fromS(ACTIVE_CASE_SORT_KEY));
 
         DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
                 .tableName(tableName)

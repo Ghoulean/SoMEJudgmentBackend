@@ -5,7 +5,7 @@ import java.time.Instant;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import com.ghoulean.somejudgment.accessor.DynamoDbAccessor;
+import com.ghoulean.somejudgment.accessor.database.DynamoDbAccessor;
 import com.ghoulean.somejudgment.domain.submissionmanager.SubmissionManager;
 import com.ghoulean.somejudgment.model.enums.SubmissionType;
 import com.ghoulean.somejudgment.model.pojo.ActiveCase;
@@ -30,10 +30,8 @@ public final class NodeRankLogStrategy implements PairStrategy {
 
     @Override
     public ActiveCase createNewActiveCase(final String judgeId, final NewActiveCaseOptions options) {
-        // TODO: cleaner mapping from NewActiveCaseOptions to SubmissionType
         log.info("NodeRankLogStrategy::createNewActiveCase invoked with judgeId={}, options={}", judgeId, options);
-        final SubmissionType submissionType = options.isNonVideoSubmission() ? SubmissionType.NONVIDEO
-                : SubmissionType.VIDEO;
+        final SubmissionType submissionType = options.getSubmissionType();
         int totalNumberSubmissions = submissionManager.getSubmissionCount(submissionType);
         int judgmentCountAmount = dynamoDbAccessor.getJudgmentCount(submissionType).getAmount();
         int currentStepNum = judgmentCountAmount / totalNumberSubmissions;

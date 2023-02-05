@@ -5,7 +5,7 @@ import java.time.Instant;
 
 import javax.inject.Inject;
 
-import com.ghoulean.somejudgment.accessor.DynamoDbAccessor;
+import com.ghoulean.somejudgment.accessor.database.DatabaseAccessor;
 import com.ghoulean.somejudgment.domain.submissionmanager.SubmissionManager;
 import com.ghoulean.somejudgment.model.enums.SubmissionType;
 import com.ghoulean.somejudgment.model.pojo.ActiveCase;
@@ -19,33 +19,30 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public final class SubmitJudgmentHandler {
-    private @NonNull final DynamoDbAccessor dynamoDbAccessor;
+    private @NonNull final DatabaseAccessor databaseAccessor;
     private @NonNull final SubmissionManager submissionManager;
     private static final Duration FORCE_WAIT_DURATION = Duration.ofMinutes(0);
 
     @Inject
-    public SubmitJudgmentHandler(@NonNull final DynamoDbAccessor dynamoDbAccessor,
+    public SubmitJudgmentHandler(@NonNull final DatabaseAccessor databaseAccessor,
             @NonNull final SubmissionManager submissionManager) {
-        this.dynamoDbAccessor = dynamoDbAccessor;
+        this.databaseAccessor = databaseAccessor;
         this.submissionManager = submissionManager;
     }
 
     public SubmitJudgmentResponse handle(@NonNull final SubmitJudgmentRequest submitJudgmentRequest) {
         final Judgment judgment = submitJudgmentRequest.getJudgment();
-        final ActiveCase activeCase = dynamoDbAccessor.getActiveCase(judgment.getJudgeId());
+        final ActiveCase activeCase = databaseAccessor.getActiveCase(judgment.getJudgeId());
         log.info("Validating judgement={} and activeCase={}", judgment, activeCase);
         validateJudgmentOrThrowException(judgment, activeCase);
         log.info("Validation successful");
         log.info("Inserting judgment={}", judgment);
-        dynamoDbAccessor.insertJudgment(judgment);
+        databaseAccessor.insertJudgment(judgment);
         log.info("Inserting activeCase={}", activeCase);
-        dynamoDbAccessor.deleteActiveCase(activeCase.getJudgeId());
-        // TODO: cleaner mapping from NewActiveCaseOptions to SubmissionType
-        final SubmissionType submissionType = activeCase.getCreatedOptions().isNonVideoSubmission()
-                ? SubmissionType.NONVIDEO
-                : SubmissionType.VIDEO;
+        databaseAccessor.deleteActiveCase(activeCase.getJudgeId());
+        final SubmissionType submissionType = activeCase.getCreatedOptions().getSubmissionType();
         log.info("Incrementing judgment count for {}", submissionType);
-        dynamoDbAccessor.incrementJudgmentCount(submissionType);
+        databaseAccessor.incrementJudgmentCount(submissionType);
         return buildResponse();
     }
 

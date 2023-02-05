@@ -1,5 +1,7 @@
 package com.ghoulean.somejudgment.model.pojo;
 
+import com.ghoulean.somejudgment.model.enums.SubmissionType;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -8,5 +10,5 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @FieldNameConstants
 public final class NewActiveCaseOptions {
-    private final boolean nonVideoSubmission;
+    private final SubmissionType submissionType;
 }

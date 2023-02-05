@@ -57,9 +57,9 @@ public final class SubmitJudgmentLambda implements RequestHandler<Map<String, Ob
 
     private String getJwtToken(@NonNull final Map<String, Object> input) {
         @NonNull
-        final Map<String, String> headers = (Map<String, String>) input.get("headers");
+        final Map<?, ?> headers = (Map<?, ?>) input.get("headers");
         @NonNull
-        final String authHeader = headers.get("Authorization");
+        final String authHeader = (String) headers.get("Authorization");
         final String jwtToken = authHeader.split(" ")[1];
         return jwtToken;
     }

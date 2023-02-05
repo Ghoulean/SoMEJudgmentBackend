@@ -2,7 +2,7 @@ package com.ghoulean.somejudgment.handler;
 
 import javax.inject.Inject;
 
-import com.ghoulean.somejudgment.accessor.DynamoDbAccessor;
+import com.ghoulean.somejudgment.accessor.database.DatabaseAccessor;
 import com.ghoulean.somejudgment.domain.pairstrategy.PairStrategy;
 import com.ghoulean.somejudgment.domain.submissionmanager.SubmissionManager;
 import com.ghoulean.somejudgment.model.enums.SubmissionType;
@@ -15,21 +15,21 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public final class GetCaseHandler {
-    private @NonNull final DynamoDbAccessor dynamoDbAccessor;
+    private @NonNull final DatabaseAccessor databaseAccessor;
     private @NonNull final SubmissionManager submissionManager;
     private @NonNull final PairStrategy pairStrategy;
 
     @Inject
-    public GetCaseHandler(@NonNull final DynamoDbAccessor dynamoDbAccessor,
+    public GetCaseHandler(@NonNull final DatabaseAccessor databaseAccessor,
             @NonNull final SubmissionManager submissionManager,
             @NonNull final PairStrategy pairStrategy) {
-        this.dynamoDbAccessor = dynamoDbAccessor;
+        this.databaseAccessor = databaseAccessor;
         this.submissionManager = submissionManager;
         this.pairStrategy = pairStrategy;
     }
 
     public GetCaseResponse handle(@NonNull final GetCaseRequest getCaseRequest) {
-        final ActiveCase activeCase = dynamoDbAccessor.getActiveCase(getCaseRequest.getJudgeId());
+        final ActiveCase activeCase = databaseAccessor.getActiveCase(getCaseRequest.getJudgeId());
         if (activeCase != null && activeCase.getCreatedOptions().equals(getCaseRequest.getNewActiveCaseOptions())) {
             log.info("Found activeCase {}, returning", activeCase);
             return buildResponse(activeCase);
@@ -38,13 +38,10 @@ public final class GetCaseHandler {
         final ActiveCase newActiveCase = pairStrategy.createNewActiveCase(getCaseRequest.getJudgeId(),
                 getCaseRequest.getNewActiveCaseOptions());
         log.info("Created new activeCase {}", newActiveCase);
-        dynamoDbAccessor.upsertActiveCase(newActiveCase);
+        databaseAccessor.upsertActiveCase(newActiveCase);
         log.info("Upserted into dynamoDb");
-        // TODO: cleaner mapping from NewActiveCaseOptions to SubmissionType
-        final SubmissionType submissionType = newActiveCase.getCreatedOptions().isNonVideoSubmission()
-                ? SubmissionType.NONVIDEO
-                : SubmissionType.VIDEO;
-        dynamoDbAccessor.incrementJudgmentCount(submissionType);
+        final SubmissionType submissionType = newActiveCase.getCreatedOptions().getSubmissionType();
+        databaseAccessor.incrementJudgmentCount(submissionType);
         log.info("Incremented judgment count for {}", submissionType);
         return buildResponse(newActiveCase);
     }
