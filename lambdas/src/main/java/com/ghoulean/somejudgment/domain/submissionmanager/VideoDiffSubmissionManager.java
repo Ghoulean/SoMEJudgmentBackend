@@ -13,6 +13,7 @@ import lombok.NonNull;
 // Video-differentiating Submission Manager
 public final class VideoDiffSubmissionManager implements SubmissionManager {
 
+    // TODO: env var
     private static final String CSV_FILE = "MOCK_DATA.csv";
     private final List<Submission> videoSubmissions;
     private final List<Submission> nonVideoSubmissions;

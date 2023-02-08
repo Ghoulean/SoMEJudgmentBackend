@@ -3,7 +3,7 @@ dotenv.config();
 import axios from "axios";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 
-export const AUTH0_TOKEN_URL = process.env.AUTHO_TOKEN_URL;
+export const AUTH0_TOKEN_URL = process.env.AUTH0_TOKEN_URL;
 export const AUDIENCE = process.env.AUDIENCE;
 export const SCOPE = process.env.SCOPE;
 export const CLIENT_ID = process.env.CLIENT_ID;

@@ -108,7 +108,7 @@ tasks.named('test') {
 
 tasks.named('jacocoTestReport') {
     dependsOn test
-    enabled = false
+    enabled = true
     reports {
         html.required = true
         xml.required = true
