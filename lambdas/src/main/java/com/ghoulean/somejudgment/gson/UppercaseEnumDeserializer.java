@@ -13,7 +13,11 @@ public final class UppercaseEnumDeserializer<E extends Enum<E>> implements JsonD
     public E deserialize(final JsonElement json, final Type type, final JsonDeserializationContext context)
             throws JsonParseException {
         if (type instanceof Class && ((Class<?>) type).isEnum()) {
-            return (E) Enum.valueOf((Class<E>) type, json.getAsString().toUpperCase());
+            try {
+                return (E) Enum.valueOf((Class<E>) type, json.getAsString().toUpperCase());
+            } catch (Exception e) {
+                return null;
+            }
         }
         return null;
     }

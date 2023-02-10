@@ -2,7 +2,9 @@ package com.ghoulean.somejudgment.domain.submissionmanager;
 
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.ghoulean.somejudgment.model.enums.SubmissionType;
 import com.ghoulean.somejudgment.model.pojo.Submission;
@@ -17,11 +19,15 @@ public final class VideoDiffSubmissionManager implements SubmissionManager {
     private static final String CSV_FILE = "MOCK_DATA.csv";
     private final List<Submission> videoSubmissions;
     private final List<Submission> nonVideoSubmissions;
+    private final Map<String, Submission> idToSubmissionMap;
+    private final Map<String, SubmissionType> idToSubmissionTypeMap;
 
     @SuppressWarnings("checkstyle:MagicNumber")
     public VideoDiffSubmissionManager() {
         videoSubmissions = new ArrayList<>();
         nonVideoSubmissions = new ArrayList<>();
+        idToSubmissionMap = new HashMap<>();
+        idToSubmissionTypeMap = new HashMap<>();
         final ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         final CSVReader reader = new CSVReader(new InputStreamReader(classloader.getResourceAsStream(CSV_FILE)));
         try {
@@ -38,8 +44,14 @@ public final class VideoDiffSubmissionManager implements SubmissionManager {
                         .build();
                 if (isVideo) {
                     videoSubmissions.add(submission);
+                    idToSubmissionTypeMap.put(submission.getId(), SubmissionType.VIDEO);
                 } else {
+                    idToSubmissionTypeMap.put(submission.getId(), SubmissionType.NONVIDEO);
                     nonVideoSubmissions.add(submission);
+                }
+                if (idToSubmissionMap.putIfAbsent(submission.getId(), submission) != null) {
+                    reader.close();
+                    throw new RuntimeException(submission.getId() + " is a duplicate id");
                 }
             }
         } catch (Exception e) {
@@ -48,12 +60,12 @@ public final class VideoDiffSubmissionManager implements SubmissionManager {
     }
 
     @Override
-    public Submission getSubmission(final int id, @NonNull final SubmissionType submissionType) {
+    public Submission getSubmission(final int enumeratedId, @NonNull final SubmissionType submissionType) {
         switch (submissionType) {
             case VIDEO:
-                return videoSubmissions.get(id);
+                return videoSubmissions.get(enumeratedId);
             case NONVIDEO:
-                return nonVideoSubmissions.get(id);
+                return nonVideoSubmissions.get(enumeratedId);
             case ALL:
             default:
                 throw new UnsupportedOperationException(
@@ -77,35 +89,13 @@ public final class VideoDiffSubmissionManager implements SubmissionManager {
         }
     }
 
-    // TODO: implement id->submission map
     @Override
     public SubmissionType getSubmissionType(@NonNull final String id) {
-        for (final Submission submission : videoSubmissions) {
-            if (submission.getId().equals(id)) {
-                return SubmissionType.VIDEO;
-            }
-        }
-        for (final Submission submission : nonVideoSubmissions) {
-            if (submission.getId().equals(id)) {
-                return SubmissionType.NONVIDEO;
-            }
-        }
-        return null;
+        return idToSubmissionTypeMap.get(id);
     }
 
-    // TODO: implement id->submission map
     @Override
     public Submission getSubmission(@NonNull final String id) {
-        for (final Submission submission : videoSubmissions) {
-            if (submission.getId().equals(id)) {
-                return submission;
-            }
-        }
-        for (final Submission submission : nonVideoSubmissions) {
-            if (submission.getId().equals(id)) {
-                return submission;
-            }
-        }
-        return null;
+        return idToSubmissionMap.get(id);
     }
 }
