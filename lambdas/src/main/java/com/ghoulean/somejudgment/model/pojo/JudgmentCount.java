@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 
-@Builder
+@Builder(toBuilder = true)
 @Data
 @FieldNameConstants
 public final class JudgmentCount {

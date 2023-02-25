@@ -1,5 +1,7 @@
 package com.ghoulean.somejudgment.dagger;
 
+import java.time.Duration;
+
 import javax.inject.Named;
 
 import dagger.Module;
@@ -21,6 +23,12 @@ public final class EnvironmentModule {
     @Provides
     public static String provideTableName() {
         return getEnv(Constants.TABLE_NAME);
+    }
+
+    @Named(Constants.WAIT_TIME_SECONDS)
+    @Provides
+    public static Duration provideForceWaitDuration() {
+        return Duration.ofSeconds(Long.parseLong(getEnv(Constants.WAIT_TIME_SECONDS)));
     }
 
     private static String getEnv(@NonNull final String key) {

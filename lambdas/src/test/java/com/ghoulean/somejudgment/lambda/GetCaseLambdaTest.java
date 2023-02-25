@@ -43,12 +43,11 @@ public final class GetCaseLambdaTest {
             .newActiveCaseOptions(NEW_ACTIVE_CASE_OPTIONS)
             .build();
 
-    private static EasyRandom easyRandom;
+    private static final EasyRandom easyRandom = new EasyRandom();
     private static GetCaseLambda getCaseLambda;
 
     @BeforeEach
     public void setup() {
-        easyRandom = new EasyRandom();
         getCaseLambda = new GetCaseLambda(mockGetCaseHandler, mockGson);
     }
 

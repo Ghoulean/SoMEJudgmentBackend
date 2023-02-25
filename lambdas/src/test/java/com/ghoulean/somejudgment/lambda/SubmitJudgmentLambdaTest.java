@@ -41,12 +41,12 @@ public final class SubmitJudgmentLambdaTest {
                     .loserId("loserId")
                     .build())
             .build();
-    private static EasyRandom easyRandom;
+
+    private static final EasyRandom easyRandom = new EasyRandom();
     private static SubmitJudgmentLambda submitJudgmentLambda;
 
     @BeforeEach
     public void setup() {
-        easyRandom = new EasyRandom();
         submitJudgmentLambda = new SubmitJudgmentLambda(mockSubmitJudgmentHandler, mockGson);
     }
 

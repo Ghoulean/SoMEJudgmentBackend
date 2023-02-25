@@ -5,7 +5,7 @@ import com.ghoulean.somejudgment.model.pojo.NewActiveCaseOptions;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
+@Builder(toBuilder = true)
 @Data
 public final class GetCaseRequest {
     private final String judgeId;

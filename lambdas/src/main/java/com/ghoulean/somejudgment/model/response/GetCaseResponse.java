@@ -5,7 +5,7 @@ import com.ghoulean.somejudgment.model.pojo.Submission;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
+@Builder(toBuilder = true)
 @Data
 public final class GetCaseResponse {
     private final Submission submission1;

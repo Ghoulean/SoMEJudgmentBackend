@@ -4,8 +4,10 @@ import java.time.Duration;
 import java.time.Instant;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import com.ghoulean.somejudgment.accessor.database.DatabaseAccessor;
+import com.ghoulean.somejudgment.dagger.Constants;
 import com.ghoulean.somejudgment.domain.submissionmanager.SubmissionManager;
 import com.ghoulean.somejudgment.model.enums.SubmissionType;
 import com.ghoulean.somejudgment.model.pojo.ActiveCase;
@@ -21,13 +23,15 @@ import lombok.extern.slf4j.Slf4j;
 public final class SubmitJudgmentHandler {
     private @NonNull final DatabaseAccessor databaseAccessor;
     private @NonNull final SubmissionManager submissionManager;
-    private static final Duration FORCE_WAIT_DURATION = Duration.ofMinutes(0);
+    private @NonNull final Duration forceWaitDuration;
 
     @Inject
     public SubmitJudgmentHandler(@NonNull final DatabaseAccessor databaseAccessor,
-            @NonNull final SubmissionManager submissionManager) {
+            @NonNull final SubmissionManager submissionManager,
+            @Named(Constants.WAIT_TIME_SECONDS) @NonNull final Duration forceWaitDuration) {
         this.databaseAccessor = databaseAccessor;
         this.submissionManager = submissionManager;
+        this.forceWaitDuration = forceWaitDuration;
     }
 
     public SubmitJudgmentResponse handle(@NonNull final SubmitJudgmentRequest submitJudgmentRequest) {
@@ -62,7 +66,7 @@ public final class SubmitJudgmentHandler {
                 && !judgment.getLoserId().equals(currentActiveCase.getSubmission2())) {
             throw new BadRequestException("Submission Id mismatch (loser)");
         }
-        if (Instant.now().minus(FORCE_WAIT_DURATION).isBefore(currentActiveCase.getCreatedAt())) {
+        if (Instant.now().minus(forceWaitDuration).isBefore(currentActiveCase.getCreatedAt())) {
             throw new BadRequestException("Need to wait at least 2 minutes before submitting judgment");
         }
     }
