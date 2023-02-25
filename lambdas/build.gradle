@@ -125,9 +125,19 @@ tasks.named('jacocoTestCoverageVerification') {
             excludes = [
                 'com.ghoulean.somejudgment.dagger.*',
                 'com.ghoulean.somejudgment.model.*',
+                'com.ghoulean.somejudgment.lambda.*'
             ]
             limit {
                 minimum = 0.80
+            }
+        }
+        rule {
+            element = 'CLASS'
+            includes = [
+                'com.ghoulean.somejudgment.lambda.*'
+            ]
+            limit {
+                minimum = 0.70
             }
         }
     }

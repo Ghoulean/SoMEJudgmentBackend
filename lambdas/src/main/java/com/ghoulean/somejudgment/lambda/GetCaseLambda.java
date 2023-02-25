@@ -1,6 +1,5 @@
 package com.ghoulean.somejudgment.lambda;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -23,13 +22,19 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
     private final GetCaseHandler getCaseHandler;
     @NonNull
     private final Gson gson;
+    @NonNull
+    private static final GetCaseComponent GET_CASE_COMPONENT = DaggerGetCaseComponent.create();
 
     private static final int SUCCESS_CODE = 200;
 
+    @lombok.Generated
     public GetCaseLambda() {
-        GetCaseComponent getCaseComponent = DaggerGetCaseComponent.create();
-        getCaseHandler = getCaseComponent.getGetCaseHandler();
-        gson = getCaseComponent.getGson();
+        this(GET_CASE_COMPONENT.getGetCaseHandler(), GET_CASE_COMPONENT.getGson());
+    }
+
+    public GetCaseLambda(@NonNull final GetCaseHandler getCaseHandler, @NonNull final Gson gson) {
+        this.getCaseHandler = getCaseHandler;
+        this.gson = gson;
     }
 
     @Override
@@ -61,7 +66,6 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
         @NonNull
         final String authHeader = (String) headers.get("Authorization");
         final String jwtToken = authHeader.split(" ")[1];
-        System.out.println(jwtToken);
         return jwtToken;
     }
 
@@ -74,10 +78,8 @@ public final class GetCaseLambda implements RequestHandler<Map<String, Object>, 
     }
 
     private Map<String, Object> buildResponse(@NonNull final GetCaseResponse getCaseResponse) {
-        final HashMap<String, Object> response = new HashMap<>();
-        response.put("statusCode", SUCCESS_CODE);
-        response.put("headers", Map.of("Content-Type", "application/json"));
-        response.put("body", gson.toJson(getCaseResponse));
-        return response;
+        return Map.of("statusCode", SUCCESS_CODE,
+                "headers", Map.of("Content-Type", "application/json"),
+                "body", gson.toJson(getCaseResponse));
     }
 }

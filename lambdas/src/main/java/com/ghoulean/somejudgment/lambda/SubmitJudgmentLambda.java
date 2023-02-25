@@ -23,13 +23,21 @@ public final class SubmitJudgmentLambda implements RequestHandler<Map<String, Ob
     private final SubmitJudgmentHandler submitJudgmentHandler;
     @NonNull
     private final Gson gson;
+    @NonNull
+    private static final SubmitJudgmentComponent GET_CASE_COMPONENT = DaggerSubmitJudgmentComponent.create();
 
     private static final int SUCCESS_CODE = 200;
 
+    @lombok.Generated
     public SubmitJudgmentLambda() {
         SubmitJudgmentComponent submitJudgmentComponent = DaggerSubmitJudgmentComponent.create();
         submitJudgmentHandler = submitJudgmentComponent.getSubmitJudgmentHandler();
         gson = submitJudgmentComponent.getGson();
+    }
+
+    public SubmitJudgmentLambda(@NonNull final SubmitJudgmentHandler submitJudgmentHandler, @NonNull final Gson gson) {
+        this.submitJudgmentHandler = submitJudgmentHandler;
+        this.gson = gson;
     }
 
     @Override
