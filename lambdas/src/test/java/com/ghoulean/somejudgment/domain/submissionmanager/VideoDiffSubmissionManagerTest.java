@@ -2,7 +2,7 @@ package com.ghoulean.somejudgment.domain.submissionmanager;
 
 import org.junit.jupiter.api.BeforeEach;
 
-public class VideoDiffSubmissionManagerTest {
+public final class VideoDiffSubmissionManagerTest {
     private static VideoDiffSubmissionManager videoDiffSubmissionManager;
 
     @BeforeEach
