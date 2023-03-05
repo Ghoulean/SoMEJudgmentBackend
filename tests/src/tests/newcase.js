@@ -7,7 +7,7 @@ const setup = async () => {
 };
 const test1 = async () => {
     const response = await getCase(0, {
-        nonVideoSubmission: false,
+        submissionType: "video",
     });
     const statusCode = response.statusCode || response.status;
     if (statusCode !== 200) {
@@ -25,7 +25,7 @@ const test1 = async () => {
 };
 const test2 = async () => {
     const response = await getCase(1, {
-        nonVideoSubmission: false,
+        submissionType: "video",
     });
     const statusCode = response.statusCode || response.status;
     if (statusCode !== 200) {
@@ -43,7 +43,7 @@ const test2 = async () => {
 };
 const test3 = async () => {
     const response = await getCase(2, {
-        nonVideoSubmission: true,
+        submissionType: "nonvideo",
     });
     const statusCode = response.statusCode || response.status;
     if (statusCode !== 200) {

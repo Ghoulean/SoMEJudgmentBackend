@@ -91,6 +91,7 @@ export class ComputeStack extends NestedStack {
             code: Code.fromAsset(JAR_FILE_LOCATION),
             environment: {
                 TABLE_NAME: someTableName,
+                WAIT_TIME_SECONDS: "120"
             },
             role: new Role(this, "SubmitJudgmentLambdaRole", {
                 assumedBy: LAMBDA_SERVICE_PRINCIPAL,
